@@ -11,7 +11,7 @@ project(RaylibPractice C)
 #this finds raylib
 find_package(raylib REQUIRED)
 #adds an exe in build folder
-add_executable(RayLibPractice main.c)
+add_executable(RayLibPractice src/main.c)
 #links the lib
 target_link_libraries(RayLibPractice raylib)
 target_include_directories(RayLibPractice PRIVATE /opt/homebrew/include)

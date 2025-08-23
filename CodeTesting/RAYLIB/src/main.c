@@ -1,8 +1,8 @@
 #include <stdio.h>
-#include <math.h>
 #include <stdlib.h>
 #include "raylib.h"
 #include "rlgl.h"
+#include "move.c"
 //Tyler Evans U1313811 this is an example program for
 
 int main(){
@@ -14,18 +14,18 @@ int main(){
     // DrawGrid(int slices, float spacing)
     int slices = 10;
     float spacing = 1.0f;
-    int MAX_GRID_VAL = slices/2;
+    int MAX_GRID_VAL = slices / 2;
 
     //this is for the robot dim
     //DrawCylinder(Vector3 position x,y,z, float radiusTop, float radiusBottom, float height, int slices, Color color)
-    const int rad = 1.0f;
-    const int heo = 1.0f;
+    const float rad = 1.0f;
+    const float heo = 1.0f;
     const int slice = 30;
 
     //for the cube that is an object it will be red for edge
-    const int ch = 1.0f;
-    const int cw = 1.0f;
-    const int cl = 1.0f;
+    const float ch = 1.0f;
+    const float cw = 5.0f;
+    const float cl = 5.0f;
 
     //this is for the postion of the robot
     float x = 0.0f;
@@ -35,6 +35,8 @@ int main(){
     float alpha = 0.0f;
     float beta = 0.0f;
     float gamma = 0.0f;
+    //battery of the battery value.
+    float batVal = 100.0f;
 
     InitWindow(h, w, "First screen");
 
@@ -52,9 +54,13 @@ int main(){
     //this sets the camera mode
     cam.projection = CAMERA_PERSPECTIVE;
 
-    //completly optional add extra stuff here.
-    //DisableCursor();
-
+    //for battery
+    Vector2 spherePosition = {0.0f, 0.0f};
+    //Edge drawing
+    int size = 50;
+    int items = 0;
+    int index = 0;
+    struct Vector3 arr[size];
 
     SetTargetFPS(60);
 
@@ -62,34 +68,63 @@ int main(){
     {
         cam.target = (Vector3){x, y, z};
         cam.position = (Vector3){x+10, y+10, z+10};
-        if(IsKeyPressed(KEY_UP) || IsKeyDown(KEY_UP)){
-            z -= 0.3f;
-        }
-        if(IsKeyPressed(KEY_DOWN) ||IsKeyDown(KEY_DOWN)){
-            z += 0.3f;
-        }
-        if(IsKeyPressed(KEY_LEFT) || IsKeyDown(KEY_LEFT)){
-            x -= 0.3f;
-        }
-        if(IsKeyPressed(KEY_RIGHT) || IsKeyDown(KEY_RIGHT)){
-            x += 0.3f;
-        }
-        if((fabs(x) > MAX_GRID_VAL) || (fabs(z) > MAX_GRID_VAL)){
-            slices += slices;
-            MAX_GRID_VAL = slices / 2;
-        }
-
+        move(&x, &y, &z, &slices, &MAX_GRID_VAL);
 
         ClearBackground(WHITE);
         UpdateCamera(&cam, CAMERA_FREE);
 
         BeginMode3D(cam);
+        //this is for drawing the vaccume
         DrawCylinder((Vector3){x, y, z}, rad, rad, heo, slice, ORANGE);
-
         DrawCylinderWires((Vector3){x, y, z}, rad, rad, heo, slice, BLACK);
+        spherePosition = GetWorldToScreen((Vector3){x,y,z}, cam);
 
         if(IsKeyPressed(KEY_SPACE)){
-            DrawCube((Vector3){x+rad,y,z+rad}, cw, ch, cl, RED);
+            if(items < size){
+                arr[index]  = (Vector3){5+x,y,z};
+                index +=1;
+                items += 1;
+            }
+            if(size == index){
+                printf("no more can be added\n");
+            }
+        }
+        if(IsKeyPressed(KEY_Z)){
+            if(items < size){
+                arr[index]  = (Vector3){((x-5)),y,z};
+                index +=1;
+                items += 1;
+            }
+            if(size == index){
+                printf("no more can be added\n");
+            }
+        }
+        if(IsKeyPressed(KEY_Q)){
+            if(items < size){
+                arr[index]  = (Vector3){x,y,((z-5))};
+                index +=1;
+                items += 1;
+            }
+            if(size == index){
+                printf("no more can be added\n");
+            }
+        }
+        if(IsKeyPressed(KEY_E)){
+            if(items < size){
+                arr[index]  = (Vector3){x,y,z+5};
+                index +=1;
+                items += 1;
+            }
+            if(size == index){
+                printf("no more can be added\n");
+            }
+        }
+        //draws the edges
+        if(items != 0){
+            for(int in = 0; in < items; in++){
+                DrawCube(arr[in], cw, ch, cl, RED);
+                DrawCube(arr[in], cw, ch, cl, MAROON);
+            }
         }
 
         DrawGrid(slices, spacing);
@@ -99,13 +134,14 @@ int main(){
         BeginDrawing();
         //drawing the window
         DrawRectangle(10, 10, 400, 200, BLUE);
-        //rlRotatef(float angle, float x, float y, float z)
+
 
         DrawText("Test Window: controls", 10, 10, 20, BLACK);
         DrawText("w a s d move the view", 10, 30, 20, BLACK);
         DrawText("mouse change camera angle", 10, 50, 20, BLACK);
         DrawText("arrow keys to move the robot", 10, 70, 20, BLACK);
         DrawText(TextFormat("X: %f Y: %f, Z: %f", x,y,z), 10, 90, 20, BLACK);
+        DrawText(TextFormat("Battery %f %", batVal), spherePosition.x-10, spherePosition.y+30, 30, BLACK);
         EndDrawing();
 
     }
