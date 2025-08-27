@@ -3,6 +3,7 @@
 #include "raylib.h"
 #include "rlgl.h"
 #include "move.c"
+#include "obstical.c"
 //Tyler Evans U1313811 this is an example program for
 
 int main(){
@@ -24,8 +25,8 @@ int main(){
 
     //for the cube that is an object it will be red for edge
     const float ch = 1.0f;
-    const float cw = 5.0f;
-    const float cl = 5.0f;
+    const float cw = 1.0f;
+    const float cl = 1.0f;
 
     //this is for the postion of the robot
     float x = 0.0f;
@@ -77,7 +78,7 @@ int main(){
         //this is for drawing the vaccume
         DrawCylinder((Vector3){x, y, z}, rad, rad, heo, slice, ORANGE);
         DrawCylinderWires((Vector3){x, y, z}, rad, rad, heo, slice, BLACK);
-        spherePosition = GetWorldToScreen((Vector3){x,y,z}, cam);
+        spherePosition = GetWorldToScreen((Vector3){x-2.5f,y+2.5f,z+1}, cam);
 
         if(IsKeyPressed(KEY_SPACE)){
             if(items < size){
@@ -100,14 +101,7 @@ int main(){
             }
         }
         if(IsKeyPressed(KEY_Q)){
-            if(items < size){
-                arr[index]  = (Vector3){x,y,((z-5))};
-                index +=1;
-                items += 1;
-            }
-            if(size == index){
-                printf("no more can be added\n");
-            }
+            addBack(arr, &items, &index, &size, x, y, z);
         }
         if(IsKeyPressed(KEY_E)){
             if(items < size){
