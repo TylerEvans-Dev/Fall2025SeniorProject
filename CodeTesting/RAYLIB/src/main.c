@@ -3,7 +3,7 @@
 #include "raylib.h"
 #include "rlgl.h"
 #include "move.c"
-#include "obstical.c"
+#include "obstacle.c"
 //Tyler Evans U1313811 this is an example program for
 
 int main(){
@@ -33,9 +33,9 @@ int main(){
     float y = 0.0f;
     float z = 0.0f;
     //this is for the angle of the robot
-    float alpha = 0.0f;
-    float beta = 0.0f;
-    float gamma = 0.0f;
+    float p = 0.0f;
+    float ya = 0.0f;
+    float roll = 0.0f;
     //battery of the battery value.
     float batVal = 100.0f;
 
@@ -112,6 +112,9 @@ int main(){
             if(size == index){
                 printf("no more can be added\n");
             }
+        }
+        if(IsKeyPressed(KEY_R)){
+            batVal -= 1;
         }
         //draws the edges
         if(items != 0){

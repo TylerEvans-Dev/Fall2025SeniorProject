@@ -12,7 +12,7 @@ void addRight(Vector3* o){
 
 }
 
-void addBack(Vector3 o[], int* item, int* index, int* size, float x, float y, float z){
+void addBack(Vector3 *o, int* item, int* index, int* size, float x, float y, float z){
     if(*item < *size){
         o[*index]  = (Vector3){x,y,((z-5))};
         *index +=1;
