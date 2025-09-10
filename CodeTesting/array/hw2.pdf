@@ -1,0 +1,38 @@
+from re import L
+import scipy as s
+import numpy as np
+import math
+from math import *
+
+
+def degtorad(deg):
+  return  ((deg* math.pi) / 180)
+def regtodeg(rad):
+    return  (rad* 180) / math.pi
+
+print(degtorad(45))
+#
+if((math.sqrt(3)/2) - math.cos(degtorad(30)) == 0):
+    print("Ja working")
+else:
+    print((math.sqrt(3)/2) - math.cos(degtorad(30)))
+    print((math.sqrt(3)/2) - np.cos(degtorad(30)))
+#problem 3
+#part 2
+
+def Rod_form(k, theta):
+    return np.array([[k[0]*(1-math.cos(theta)) +math.cos(theta),((k[0]*k[1]*(1-math.cos(theta)))-k[3]*math.sin(theta)),k[0]*k[2](1-math.cos(theta))+ k[1]*math.sin(theta)],
+        [k[0]*k[1]*(1-math.cos(theta))+ k[2]*(1-math.cos(theta))+math.cos(theta), (k[1]*k[2]*(1-math.cos(theta)))+math.cos(theta), k[1]*k[2]*(1-math.cos(theta))- k[0]*math.sin(theta)],
+        [k[1]*k[2]*(1-math.cos(theta))-k[1]*math.sin(theta),k[1]*k[2]*(1-math.cos(theta)) + k[0]*math.sin(theta),k[2](1-math.cos(theta)) + math.cos(theta)]])
+
+#part 1
+def angle_axis_form(k, theta):
+    sk = np.array([[0, -1*k[2], k[1]],
+        [k[2],0, -1*k[0]]
+        ,[-1*k[1], k[0],0]])
+    return math.exp(sk*theta)
+
+
+#problem 4
+
+#ran out of time :( due to being stuck on problem 1...

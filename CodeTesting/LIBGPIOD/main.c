@@ -2,6 +2,7 @@
 #include <unistd.h>
 //There will be several things underlined as they are not fixed at the moment :(
 #include "test.c"
+#include "gpio.c"
 
 #define CONSUMER "blink"
 
@@ -15,6 +16,7 @@ int main(void) {
     if (!chip) { perror("Open chip failed"); return 1; }
 
     // Pick GPIO line number (e.g. 264 for PI8)
+
     line = gpiod_chip_get_line(chip, PIN3_SDA1);
     if (!line) { perror("Get line failed"); gpiod_chip_close(chip); return 1; }
 
