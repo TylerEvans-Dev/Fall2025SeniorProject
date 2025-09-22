@@ -4,3 +4,6 @@
 [submodule "CodeTesting/GPIO/wiringOP"]
 	path = CodeTesting/GPIO/wiringOP
 	url = https://github.com/orangepi-xunlong/wiringOP.git
+[submodule "CodeRobot/wiringOP"]
+	path = CodeRobot/wiringOP
+	url = https://github.com/orangepi-xunlong/wiringOP.git
