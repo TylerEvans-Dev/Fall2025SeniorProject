@@ -5,25 +5,26 @@
 #include <stdint.h>
 #include <stdio.h>
 
-void setup_init(){
+int main(void) {
+    printf("Start of the I2C test program\n");
 
-}
-
-
-int main(){
-    int8_t reg = 0x00;
-    int16_t reg1 = 0x00;
-    //starting
-    printf("start of the test  program for I2C");
-    wiringPiSetup();
-
-    int fd = wiringPiI2CSetup(0x29);
-    if(fd < 0){
-        printf("device did not connect :(\n");
+    if (wiringPiSetup() == -1) {
+        perror("WiringOP setup failed");
+        return 1;
     }
-    int status = wiringPiI2CReadReg8(fd,reg);
-    printf("the status is %d and the value is %d\n", status, reg);
-    int status2 = wiringPiI2CReadReg16(fd, reg1);
-    printf("the status is %d and the value is %d\n", status2, reg1);
+
+    int fd = wiringPiI2CSetup(0x29);  // VL53L0X default address
+    if (fd < 0) {
+        perror("Failed to open I2C device");
+        return 1;
+    }
+
+    int reg = 0x00;  // first register (safe to read)
+    int val8 = wiringPiI2CReadReg8(fd, reg);
+    printf("8-bit read: reg 0x%02X -> 0x%02X\n", reg, val8 & 0xFF);
+
+    int val16 = wiringPiI2CReadReg16(fd, reg);
+    printf("16-bit read: reg 0x%02X -> 0x%04X\n", reg, val16 & 0xFFFF);
+
     return 0;
 }
