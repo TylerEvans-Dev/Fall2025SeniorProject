@@ -1,3 +1,4 @@
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/_select.h>
@@ -12,37 +13,30 @@
 #include "beg.c"
 #include "../wiringOP/wiringPi/softPwm.h"
 //#include "i2c.c"
+#define P37 26
+#define P38 25
 
 //todo implement functions here.
-void customMode(){
 
-}
-void mapping(){
-
-}
-
-void cleaning(){
-
-}
-
-void memd(int* stepCount, int pinA, int pinB){
-    //read encoder values
+int encoderRead(int pinA){
     int a = digitalRead(pinA);
-    int b = digitalRead(pinB);
-    //add or subtract based on that value.
-    if(a == b){
-        //if both are measured HIGH then add
-        *stepCount++;
-        printf("step");
+    if(a == 1){
+        return 1;
     }
     else{
-        //if both are LOW sub.
-        *stepCount--;
-        printf("neg step");
+        return 0;
     }
 }
 
+
 //TODO define these values exact
+//
+// TODO define these vaues here for the encoder count.
+#define PIN_EN1 20
+#define PIN_EN2 19
+#define PIN_EN3 18
+#define PIN_EN4 17
+
 #define PWM1_PIN 21
 #define PWM2_PIN 22
 #define PWM3_PIN 2
@@ -64,14 +58,8 @@ void setupPwm(){
     pwmSetMode(PWM3_PIN, PWM_MODE_MS); // PWM 3
     pwmSetMode(PWM4_PIN, PWM_MODE_MS); // PWM 4
     //set clock speed.
-    pwmSetRange(PWM1_PIN, PWM_RANGE); //resolution PWM 1
-    pwmSetRange(PWM2_PIN, PWM_RANGE); //resolution PWM 2
-    pwmSetRange(PWM3_PIN, PWM_RANGE); //resolution PWM 3
-    pwmSetRange(PWM4_PIN, PWM_RANGE); //resolution PWM 4
+    pwmSetRange(PWM_RANGE); //resolution PWM 1
 
-    pwmSetClock(PWM1_PIN, PWM_DIV); //div PWM 1
-    pwmSetClock(PWM2_PIN, PWM_DIV); //div PWM 2
-    pwmSetClock(PWM3_PIN, PWM_DIV); //div PWM 3
     pwmSetClock(PWM4_PIN, PWM_DIV); //div PWM 4
 }
 
@@ -101,17 +89,52 @@ void turn(float deg){
     //TODO
 }
 
+//needed for encoder counts.
+volatile uint32_t countlm = 0;
+volatile uint8_t prvlm;
+volatile uint32_t  countrm = 0;
+volatile uint8_t prvrm;
+//this is the trans. table for the encoder count.
+const uint8_t transTable[4][4] = {{0, 1, -1 , 0}, {-1, 0, 0, 1}, {1,0,0,-1}, {0, -1,1,0}};
+
+void encoder_r_isr(void){
+ uint8_t a = digitalRead(PIN_EN1);
+ uint8_t b = digitalRead(PIN_EN2);
+ //shifting the read so it becomes the higher bit.
+ uint8_t cur = (a<<1) | b;
+ countrm += transTable[prvrm][cur];
+ prvrm = cur;
+}
+
+void encoder_l_isr(void){
+    uint8_t a = digitalRead(PIN_EN3);
+    uint8_t b = digitalRead(PIN_EN4);
+    //shifting the read so it becomes the higher bit.
+    uint8_t cur = (a<<1) | b;
+    countrm += transTable[prvlm][cur];
+    prvlm = cur;
+}
+
 //main function
 int main(){
+    if(wiringPiISR(PIN_EN1, INT_EDGE_BOTH, &encoder_r_isr) < 0){
+        printf("failure to use right ISR\n");
+        return -1;
+    }
+    if(wiringPiISR(PIN_EN3, INT_EDGE_BOTH, &encoder_l_isr) < 0){
+        printf("failure to use left ISR\n");
+    }
+
+
     if(beginLoop() == 1){
-        customMode();
+        //customMode();
         setupPwm();
         printf("working in custom mode");
         while(1){
-        forward(50);
-        delay(100);
-        backward(50);
-        delay(100);
+            forward(50);
+            delay(100);
+            backward(50);
+            delay(100);
         }
     }
     else{

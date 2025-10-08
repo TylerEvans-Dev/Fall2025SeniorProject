@@ -2,7 +2,7 @@
 #include "../wiringOP/wiringPi/wiringPi.h"
 #include "../wiringOP/wiringPi/wiringPiI2C.h"
 
-int lol(void) {
+int main(void) {
     int fd;
     int deviceAddr = 0x29;  // replace with your device address
     int reg = 0x00;         // replace with your register
