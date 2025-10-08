@@ -18,7 +18,7 @@ int main(){
     wiringPiSetup();
 
     int fd = wiringPiI2CSetup(0x29);
-    if(fd != 1){
+    if(fd < 0){
         printf("device did not connect :(\n");
     }
     int status = wiringPiI2CReadReg8(fd,reg);
