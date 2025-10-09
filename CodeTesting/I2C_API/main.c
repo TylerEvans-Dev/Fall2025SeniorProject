@@ -4,7 +4,6 @@
 #include <unistd.h>
 #include <stdio.h>
 #include "VL53L0X.h"
-#include "VL53L0X_WP.c"
 #if defined(__APPLE__)
     #include "../GPIO/wiringOP/wiringPi/wiringPi.h"
     #include "../GPIO/wiringOP/wiringPi/wiringPiI2C.h"
@@ -14,25 +13,24 @@
 #endif
 
 
-int main(void)
-{
-    if (i2c_start(0x29) < 0) {
-        printf("Failed to start I2C.\n");
-        return 1;
-    }
+int main() {
+    wiringPiSetup();
+
+    //VL53L0X_I2CInit();  // sets up I²C device using wiringPiI2CSetup()
+    initVL53L0X(1);
 
     if (!initVL53L0X(true)) {
-        printf("Sensor init failed.\n");
+        printf("Failed to initialize VL53L0X\n");
         return 1;
     }
-
-    printf("VL53L0X initialized!\n");
 
     while (1) {
         uint16_t distance = readRangeSingleMillimeters(NULL);
-        printf("Distance: %u mm\n", distance);
-        usleep(200000);
+        if (timeoutOccurred()) {
+            printf("Timeout!\n");
+        } else {
+            printf("Distance: %d mm\n", distance);
+        }
+        delay(100);
     }
-
-    return 0;
 }
