@@ -1,51 +1,43 @@
-#include <stdint.h>
+//these are the standard libs
 #include <stdio.h>
 #include <stdlib.h>
-#include <sys/_select.h>
-#include <sys/_types/_fd_def.h>
+#include <stdint.h>
 #include <unistd.h>
 #include <time.h>
-#include <sys/select.h>
+//this is so I can be able to use the hardware libs on my computer when programming
+#if defined(__APPLE__)
 #include "../wiringOP/wiringPi/wiringPi.h"
-//#include "read.c"
-//#include "action.c"
-//#include "cord.c"
-#include "beg.c"
-#include "../wiringOP/wiringPi/softPwm.h"
-//#include "i2c.c"
-#define P37 26
-#define P38 25
-
+#else
+//otherwise if its on the orange it will be on wiringPi since it is downloaded
+#include <wiringPi.h>
+#endif
+//I2C lib
+#include "VL53L0X/tof.h"
+//more for the
+#define ADRTOF 0x29
 //todo implement functions here.
+void customMode(){}
+void mapping(){}
+void cleaning(){}
 
-int encoderRead(int pinA){
-    int a = digitalRead(pinA);
-    if(a == 1){
-        return 1;
-    }
-    else{
-        return 0;
-    }
-}
-
-
-//TODO define these values exact
-//
-// TODO define these vaues here for the encoder count.
-#define PIN_EN1 20
-#define PIN_EN2 19
-#define PIN_EN3 18
-#define PIN_EN4 17
 
 #define PWM1_PIN 21
 #define PWM2_PIN 22
 #define PWM3_PIN 2
 #define PWM4_PIN 9
 
+
+#define P11 5
+#define P12 6
+
+//TODO implement pin random number chosen
+#define P13 0909090
+#define P14 0999999
+
 #define MAX_RANGE_PWM 100
 #define PWM_RANGE 1024
 #define PWM_DIV 192
-
+int count = 0;
 void setupPwm(){
     //setup the pinmode
     pinMode(PWM1_PIN, PWM_OUTPUT);
@@ -53,13 +45,15 @@ void setupPwm(){
     pinMode(PWM3_PIN, PWM_OUTPUT);
     pinMode(PWM4_PIN, PWM_OUTPUT);
     //setup the PWM mode PWM_MODE_MS
-    pwmSetMode(PWM1_PIN, PWM_MODE_MS); // PWM 1
-    pwmSetMode(PWM2_PIN, PWM_MODE_MS); // PWM 2
-    pwmSetMode(PWM3_PIN, PWM_MODE_MS); // PWM 3
-    pwmSetMode(PWM4_PIN, PWM_MODE_MS); // PWM 4
     //set clock speed.
-    pwmSetRange(PWM_RANGE); //resolution PWM 1
+    pwmSetRange(PWM1_PIN, PWM_RANGE); //resolution PWM 1
+    pwmSetRange(PWM2_PIN, PWM_RANGE); //resolution PWM 2
+    pwmSetRange(PWM3_PIN, PWM_RANGE); //resolution PWM 3
+    pwmSetRange(PWM4_PIN, PWM_RANGE); //resolution PWM 4
 
+    pwmSetClock(PWM1_PIN, PWM_DIV); //div PWM 1
+    pwmSetClock(PWM2_PIN, PWM_DIV); //div PWM 2
+    pwmSetClock(PWM3_PIN, PWM_DIV); //div PWM 3
     pwmSetClock(PWM4_PIN, PWM_DIV); //div PWM 4
 }
 
@@ -84,12 +78,23 @@ void backward(int PWMval){
     pwmWrite(PWM4_PIN, PWMval);
     pwmWrite(PWM2_PIN, PWMval);
 }
+//Here is encoder read if you want to see basic encoder read
+void encoderRead( int pinA, int pinB){
+ //read encoder values
+    int a = digitalRead(pinA);
+    int b = digitalRead(pinB);
+    printf("value of a is %i and value of b is %i \n", a, b);
+        if(a == 1){
+        printf("forwards\n");
+        count += 1;
+        }
+        else{
+        printf("backwards\n");
+        count -=1;
+        }
 
-void turn(float deg){
-    //TODO
 }
-
-//needed for encoder counts.
+//this is another method of using encoder read more org. and accur.
 volatile uint32_t countlm = 0;
 volatile uint8_t prvlm;
 volatile uint32_t  countrm = 0;
@@ -98,48 +103,81 @@ volatile uint8_t prvrm;
 const uint8_t transTable[4][4] = {{0, 1, -1 , 0}, {-1, 0, 0, 1}, {1,0,0,-1}, {0, -1,1,0}};
 
 void encoder_r_isr(void){
- uint8_t a = digitalRead(PIN_EN1);
- uint8_t b = digitalRead(PIN_EN2);
+ uint8_t a = digitalRead(P11);
+ uint8_t b = digitalRead(P12);
  //shifting the read so it becomes the higher bit.
  uint8_t cur = (a<<1) | b;
  countrm += transTable[prvrm][cur];
  prvrm = cur;
+printf("the value is %i \n", countlm);
 }
 
 void encoder_l_isr(void){
-    uint8_t a = digitalRead(PIN_EN3);
-    uint8_t b = digitalRead(PIN_EN4);
+    uint8_t a = digitalRead(P11);
+    uint8_t b = digitalRead(P12);
     //shifting the read so it becomes the higher bit.
     uint8_t cur = (a<<1) | b;
-    countrm += transTable[prvlm][cur];
+    countlm += transTable[prvlm][cur];
     prvlm = cur;
+    printf("the value is %i \n", countrm);
+    }
+
+//I2C functions
+// TODO
+int singleReadVLX(){
+    int distance;
+    int model;
+    int rev;
+    int fd = tofInit(0, ADRTOF, 1);
+    if(fd != 1){
+        //so if there is an issue one can see it
+        return -1;
+    }
+    //this is for debug.if things are not working
+    tofGetModel(&model, &rev);
+    //printf("the Mod. is %d\n", model);
+    //printf("the Rev. is %d\n", model);
+
+    return tofReadDistance();
 }
 
 //main function
 int main(){
-    if(wiringPiISR(PIN_EN1, INT_EDGE_BOTH, &encoder_r_isr) < 0){
-        printf("failure to use right ISR\n");
-        return -1;
-    }
-    if(wiringPiISR(PIN_EN3, INT_EDGE_BOTH, &encoder_l_isr) < 0){
-        printf("failure to use left ISR\n");
-    }
-
-
-    if(beginLoop() == 1){
-        //customMode();
+        wiringPiSetup();
+        pinMode(P12, INPUT);
+        pinMode(P11, INPUT);
+         if(wiringPiISR(P11, INT_EDGE_BOTH, &encoder_r_isr) < 0){
+                printf("failure to use right ISR\n");
+                return -1;
+        }
+        if(wiringPiISR(P12, INT_EDGE_BOTH, &encoder_l_isr) < 0){
+                printf("failure to use left ISR\n");
+                return -1;
+        }
+    //if(beginLoop() == 1){
+        customMode();
         setupPwm();
         printf("working in custom mode");
         while(1){
-            forward(50);
-            delay(100);
-            backward(50);
-            delay(100);
+                forward(200);
+                //encoderRead(P11, P12);
+                delay(1000);
+                stop();
+                delay(1000);
+                backward(200);
+
+                delay(1000);
+                //memd(j, P11, P12);
+                //encoderRead(P11, P12);
+                stop();
+                printf("the count is %i", count);
+                delay(1000);
+                printf("the value read is %d\n", singleReadVLX());
         }
-    }
-    else{
+    //}
+   // else{
         printf("working in default mode");
        // printf("the value read %i", lol());
-    }
+    //}
     return 0;
 }

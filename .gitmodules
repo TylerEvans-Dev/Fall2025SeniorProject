@@ -7,3 +7,6 @@
 [submodule "CodeRobot/wiringOP"]
 	path = CodeRobot/wiringOP
 	url = https://github.com/orangepi-xunlong/wiringOP.git
+[submodule "CodeRobot/src/VL53L0X"]
+	path = CodeRobot/src/VL53L0X
+	url = https://github.com/bitbank2/VL53L0X.git

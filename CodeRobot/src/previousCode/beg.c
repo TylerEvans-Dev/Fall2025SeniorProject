@@ -1,7 +1,13 @@
 #include <stdio.h>
 #include <stdlib.h>
+#if defined(__APPLE__)
 #include <sys/_select.h>
 #include <sys/_types/_fd_def.h>
+#else
+#include <sys/select.h>  // Standard POSIX select()
+#include <sys/types.h>   // For fd_set and select()
+#include <termios.h>     // For disabling input buffering
+#endif
 #include <unistd.h>
 #include <time.h>
 #include <sys/select.h>
