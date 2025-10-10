@@ -1,62 +1,163 @@
-#include <wiringPi.h>
-#include <wiringPiI2C.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <stdint.h>
-#include <unistd.h> // For sleep/usleep
+#include <unistd.h>
+#include <time.h>
+#if defined(__APPLE__)
+#include "../wiringOP/wiringPi/wiringPi.h"
+#else
+#include <wiringPi.h>
+#endif
 
-#define ADR 0x29
+//todo implement functions here.
+void customMode(){
 
-// Function to perform an I2C write and check the result
-int safe_i2c_write(int fd, int reg, uint8_t value) {
-    int status = wiringPiI2CWriteReg8(fd, reg, value);
-    if (status == -1) {
-        printf("I2C WRITE FAILED for Reg 0x%X (Val 0x%X)\n", reg, value);
-    }
-    return status;
+}
+void mapping(){
+
 }
 
-int main() {
-    // ... (Setup checks for wiringPiSetup and wiringPiI2CSetup - assuming successful) ...
+void cleaning(){
 
-    int fdq = wiringPiI2CSetup(ADR);
-    if (fdq < 0) {
-        printf("ERROR: Device setup failed.\n");
-        return 1;
-    }
-    printf("Device setup successful (fdq: %d)\n", fdq);
+}
 
-    // --- VL53L0X STARTUP SEQUENCE (Mandatory) ---
-    printf("Starting VL53L0X initialization writes...\n");
+//Pins used for PWM
+#define PWM1_PIN 21
+#define PWM2_PIN 22
+#define PWM3_PIN 2
+#define PWM4_PIN 9
+//Pins used for encoder read right
+#define P11 5
+#define P12 6
+//TODO define pins here for left
+#define P13
+#define P14
 
-    // 1. Reset / Enable Sequence (Often needed for proper startup)
-    // The VL53L0X powers up in 1.8V mode, these writes move it to a known state.
-    if (safe_i2c_write(fdq, 0x88, 0x00) == -1) return 1;
-    if (safe_i2c_write(fdq, 0x80, 0x01) == -1) return 1;
-    if (safe_i2c_write(fdq, 0xFF, 0x01) == -1) return 1;
-    if (safe_i2c_write(fdq, 0x00, 0x00) == -1) return 1;
-    if (safe_i2c_write(fdq, 0x91, 0x3c) == -1) return 1;
-    if (safe_i2c_write(fdq, 0x00, 0x01) == -1) return 1;
-    if (safe_i2c_write(fdq, 0xFF, 0x00) == -1) return 1;
 
-    usleep(10000); // Wait a short time
+#define MAX_RANGE_PWM 100
+#define PWM_RANGE 1024
+#define PWM_DIV 192
+int count = 0;
+void setupPwm(){
+    //setup the pinmode
+    pinMode(PWM1_PIN, PWM_OUTPUT);
+    pinMode(PWM2_PIN, PWM_OUTPUT);
+    pinMode(PWM3_PIN, PWM_OUTPUT);
+    pinMode(PWM4_PIN, PWM_OUTPUT);
+    //setup the PWM mode PWM_MODE_MS
+    //set clock speed.
+    pwmSetRange(PWM1_PIN, PWM_RANGE); //resolution PWM 1
+    pwmSetRange(PWM2_PIN, PWM_RANGE); //resolution PWM 2
+    pwmSetRange(PWM3_PIN, PWM_RANGE); //resolution PWM 3
+    pwmSetRange(PWM4_PIN, PWM_RANGE); //resolution PWM 4
 
-    printf("Initialization writes complete. Attempting to read Model ID (0xC0).\n");
+    pwmSetClock(PWM1_PIN, PWM_DIV); //div PWM 1
+    pwmSetClock(PWM2_PIN, PWM_DIV); //div PWM 2
+    pwmSetClock(PWM3_PIN, PWM_DIV); //div PWM 3
+    pwmSetClock(PWM4_PIN, PWM_DIV); //div PWM 4
+}
 
-    // 2. Read the Model ID (Expected: 0xEE or 0xAA for VL53L0X)
-    int ReadResult = wiringPiI2CReadReg8(fdq, 0xC0);
+void stop(){
+    //must stop all to so set to zero.
+    pwmWrite(PWM1_PIN, 0);
+    pwmWrite(PWM2_PIN, 0);
+    pwmWrite(PWM3_PIN, 0);
+    pwmWrite(PWM4_PIN, 0);
+    usleep(10); //added delay to help motor slow down
+}
+//every action made must be put at rest or it will damage the motor.
+void forward(int PWMval){
+    stop(); // must be done to help motors be good
+    pwmWrite(PWM3_PIN, PWMval);
+    pwmWrite(PWM1_PIN, PWMval);
 
-    if (ReadResult == -1) {
-        printf("FINAL ERROR: Read failed even after initialization. Check XSHUT/VCC.\n");
-    } else {
-        uint8_t ReadVal = (uint8_t)ReadResult;
-        printf("SUCCESS: Read 8-bit reg val from 0xC0: 0x%X (%u)\n", ReadVal, ReadVal);
+}
 
-        if (ReadVal == 0xEE || ReadVal == 0xAA) {
-            printf("Confirmed Device ID. Communication is working!\n");
-        } else {
-            printf("Unexpected Device ID (0x%X). Wiring is OK, but sequence may be wrong.\n", ReadVal);
+void backward(int PWMval){
+    stop(); //must be done to help motor health
+    pwmWrite(PWM4_PIN, PWMval);
+    pwmWrite(PWM2_PIN, PWMval);
+}
+void encoderRead( int pinA, int pinB){
+ //read encoder values
+    int a = digitalRead(pinA);
+    int b = digitalRead(pinB);
+    printf("value of a is %i and value of b is %i \n", a, b);
+        if(a == 1){
+        printf("forwards\n");
+        count += 1;
         }
+        else{
+        printf("backwards\n");
+        count -=1;
+        }
+
+}
+volatile uint32_t countlm = 0;
+volatile uint8_t prvlm;
+volatile uint32_t  countrm = 0;
+volatile uint8_t prvrm;
+//this is the trans. table for the encoder count.
+const uint8_t transTable[4][4] = {{0, 1, -1 , 0}, {-1, 0, 0, 1}, {1,0,0,-1}, {0, -1,1,0}};
+
+void encoder_r_isr(void){
+ uint8_t a = digitalRead(P11);
+ uint8_t b = digitalRead(P12);
+ //shifting the read so it becomes the higher bit.
+ uint8_t cur = (a<<1) | b;
+ countrm += transTable[prvrm][cur];
+ prvrm = cur;
+printf("the value is %i \n", countlm);
+}
+
+void encoder_l_isr(void){
+    uint8_t a = digitalRead(P11);
+    uint8_t b = digitalRead(P12);
+    //shifting the read so it becomes the higher bit.
+    uint8_t cur = (a<<1) | b;
+    countlm += transTable[prvlm][cur];
+    prvlm = cur;
+    printf("the value is %i \n", countrm);
     }
 
+
+
+//main function
+int main(){
+        wiringPiSetup();
+        pinMode(P12, INPUT);
+        pinMode(P11, INPUT);
+         if(wiringPiISR(P11, INT_EDGE_BOTH, &encoder_r_isr) < 0){
+                printf("failure to use right ISR\n");
+                return -1;
+        }
+        if(wiringPiISR(P12, INT_EDGE_BOTH, &encoder_l_isr) < 0){
+                printf("failure to use left ISR\n");
+                return -1;
+        }
+    //if(beginLoop() == 1){
+        customMode();
+        setupPwm();
+        printf("working in custom mode");
+        while(1){
+                forward(200);
+                //encoderRead(P11, P12);
+                delay(1000);
+                stop();
+                delay(1000);
+                backward(200);
+
+                delay(1000);
+                //memd(j, P11, P12);
+                //encoderRead(P11, P12);
+                stop();
+                printf("the count is %i", count);
+                delay(1000);
+        }
+    //}
+   // else{
+        printf("working in default mode");
+       // printf("the value read %i", lol());
+    //}
     return 0;
 }
