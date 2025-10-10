@@ -59,9 +59,6 @@ int main(void) {
         printf("Failed to init I2C.\n");
         return -1;
     }
-    uint16_t rego = 0x00;
-    wiringPiI2CReadReg8(fd, rego);
-    printf("the value first read from the reg %d", rego);
 
     vl53l0x_init(fd);
 

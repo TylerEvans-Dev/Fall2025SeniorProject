@@ -1,45 +1,44 @@
-//these are the standard libs
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
+//#include <sys/_select.h>
+//#include <sys/_types/_fd_def.h>
 #include <unistd.h>
 #include <time.h>
-//this is so I can be able to use the hardware libs on my computer when programming
-#if defined(__APPLE__)
-#include "../wiringOP/wiringPi/wiringPi.h"
-#else
-//otherwise if its on the orange it will be on wiringPi since it is downloaded
+//#include <sys/select.h>
 #include <wiringPi.h>
-#endif
-//I2C lib
-#include "VL53L0X/tof.h"
-//more for the
-#define ADRTOF 0x29
-#define I2C_CHAN 3
+//#include "read.c"
+//#include "action.c"
+//#include "cord.c"
+//#include "beg.c"
+#include <softPwm.h>
+//#include "i2c.c"
 
 //todo implement functions here.
-void customMode(){}
-void mapping(){}
-void cleaning(){}
+void customMode(){
+
+}
+void mapping(){
+
+}
+
+void cleaning(){
+
+}
 
 
 #define PWM1_PIN 21
 #define PWM2_PIN 22
 #define PWM3_PIN 2
 #define PWM4_PIN 9
-
-
 #define P11 5
 #define P12 6
 
-//TODO implement pin random number chosen
-#define P13 0909090
-#define P14 0999999
 
 #define MAX_RANGE_PWM 100
 #define PWM_RANGE 1024
 #define PWM_DIV 192
-int count = 0;
+int count = 0; 
 void setupPwm(){
     //setup the pinmode
     pinMode(PWM1_PIN, PWM_OUTPUT);
@@ -47,6 +46,10 @@ void setupPwm(){
     pinMode(PWM3_PIN, PWM_OUTPUT);
     pinMode(PWM4_PIN, PWM_OUTPUT);
     //setup the PWM mode PWM_MODE_MS
+   // pwmSetMode(PWM1_PIN, PWM_MODE_MS); // PWM 1
+   // pwmSetMode(PWM2_PIN, PWM_MODE_MS); // PWM 2
+    //pwmSetMode(PWM3_PIN, PWM_MODE_MS); // PWM 3
+   // pwmSetMode(PWM4_PIN, PWM_MODE_MS); // PWM 4
     //set clock speed.
     pwmSetRange(PWM1_PIN, PWM_RANGE); //resolution PWM 1
     pwmSetRange(PWM2_PIN, PWM_RANGE); //resolution PWM 2
@@ -80,7 +83,6 @@ void backward(int PWMval){
     pwmWrite(PWM4_PIN, PWMval);
     pwmWrite(PWM2_PIN, PWMval);
 }
-//Here is encoder read if you want to see basic encoder read
 void encoderRead( int pinA, int pinB){
  //read encoder values
     int a = digitalRead(pinA);
@@ -96,7 +98,6 @@ void encoderRead( int pinA, int pinB){
         }
 
 }
-//this is another method of using encoder read more org. and accur.
 volatile uint32_t countlm = 0;
 volatile uint8_t prvlm;
 volatile uint32_t  countrm = 0;
@@ -124,24 +125,7 @@ void encoder_l_isr(void){
     printf("the value is %i \n", countrm);
     }
 
-//I2C functions
-// TODO
-int singleReadVLX(){
-    int distance;
-    int model;
-    int rev;
-    int fd = tofInit(3, ADRTOF, 1);
-    if(fd != 1){
-        //so if there is an issue one can see it
-        return -1;
-    }
-    //this is for debug.if things are not working
-    tofGetModel(&model, &rev);
-    //printf("the Mod. is %d\n", model);
-    //printf("the Rev. is %d\n", model);
 
-    return tofReadDistance();
-}
 
 //main function
 int main(){
@@ -156,9 +140,9 @@ int main(){
                 printf("failure to use left ISR\n");
                 return -1;
         }
+    //if(beginLoop() == 1){
         customMode();
         setupPwm();
-         int fd = tofInit(I2C_CHAN, ADRTOF, 1);
         printf("working in custom mode");
         while(1){
                 forward(200);
@@ -174,10 +158,11 @@ int main(){
                 stop();
                 printf("the count is %i", count);
                 delay(1000);
-                printf("the value read is %d\n", singleReadVLX());
         }
-
+    //}
+   // else{
         printf("working in default mode");
-
+       // printf("the value read %i", lol());
+    //}
     return 0;
 }
