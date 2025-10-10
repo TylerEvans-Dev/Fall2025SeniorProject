@@ -3,7 +3,7 @@
 #include <stdint.h>
 #include <unistd.h>
 #include <stdio.h>
-#include "VL53L0X.h"
+
 #if defined(__APPLE__)
     #include "../GPIO/wiringOP/wiringPi/wiringPi.h"
     #include "../GPIO/wiringOP/wiringPi/wiringPiI2C.h"
@@ -12,25 +12,49 @@
     #include <wiringPiI2C.h>
 #endif
 
+#include "VL53L0X.h"
 
-int main() {
-    wiringPiSetup();
+// The VL53L0X default I2C address
+#define VL53L0X_ADDR 0x29
 
-    //VL53L0X_I2CInit();  // sets up I²C device using wiringPiI2CSetup()
-    initVL53L0X(1);
+int main(void) {
+    printf("=== VL53L0X Distance Sensor Test ===\n");
 
-    if (!initVL53L0X(true)) {
-        printf("Failed to initialize VL53L0X\n");
+    // Initialize WiringPi
+    if (wiringPiSetup() == -1) {
+        fprintf(stderr, "Failed to initialize WiringPi\n");
         return 1;
     }
 
+    // Initialize I2C for the VL53L0X
+    initVL53L0X(VL53L0X_ADDR);
+
+    // Initialize the sensor
+    printf("Initializing sensor...\n");
+    if (!initVL53L0X(true)) {
+        fprintf(stderr, "VL53L0X initialization failed!\n");
+        return 1;
+    }
+
+    // Optional: set measurement timing budget (e.g. 33ms default)
+    setMeasurementTimingBudget(33000);
+
+    printf("Sensor initialized successfully.\n\n");
+
+    // Main loop: continuously read distance
     while (1) {
         uint16_t distance = readRangeSingleMillimeters(NULL);
+
         if (timeoutOccurred()) {
-            printf("Timeout!\n");
+            printf("Timeout occurred!\n");
+        } else if (distance == 65535) {
+            printf("Invalid measurement (out of range)\n");
         } else {
-            printf("Distance: %d mm\n", distance);
+            printf("Distance: %u mm\n", distance);
         }
-        delay(100);
+
+        delay(200); // wait 200 ms between readings
     }
+
+    return 0;
 }
