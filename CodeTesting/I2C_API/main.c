@@ -21,7 +21,7 @@ int main(void) {
     printf("=== VL53L0X Distance Sensor Test ===\n");
 
     // Initialize WiringPi
-    if (wiringPiSetup() == -1) {
+    if (wiringPiSetupSys() == -1) {
         fprintf(stderr, "Failed to initialize WiringPi\n");
         return 1;
     }
