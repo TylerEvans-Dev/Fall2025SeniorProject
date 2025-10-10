@@ -26,11 +26,14 @@ int main(){
     printf("device setup \n");
 
     uint8_t ReadVal = wiringPiI2CReadReg8(fdq, 0xC0);
-    printf("the 8 reg val %d \n", ReadVal);
+    printf("the 8 reg val %u \n", ReadVal);
     uint16_t ReadVal1 = wiringPiI2CReadReg16(fdq, 0xC0);
-    printf("the 16 reg val %d \n", ReadVal1);
+    printf("the 16 reg val %u \n", ReadVal1);
     int ReadVal3 = wiringPiI2CRead(fdq);
-    printf("the reg val %d \n", ReadVal3);
+    printf("the reg val %u \n", ReadVal3);
+    int check = wiringPiI2CWriteReg8(fdq, 0x80, 0x33);
+    uint16_t ReadVal4 = wiringPiI2CReadReg8(fdq, 0x80);
+    printf("the 16 reg val %u \n", ReadVal1);
     return 0;
 
 
