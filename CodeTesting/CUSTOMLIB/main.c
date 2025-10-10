@@ -1,43 +1,62 @@
-#include <stdbool.h>
-#include <stdint.h>
-#include <stdio.h>
-#if defined(__APPLE__)
-#include "wiringOP/wiringPi/wiringPi.h"
-#include "wiringOP/wiringPi/wiringPiI2C.h"
-#else
 #include <wiringPi.h>
 #include <wiringPiI2C.h>
-#endif
+#include <stdio.h>
+#include <stdint.h>
+#include <unistd.h> // For sleep/usleep
 
 #define ADR 0x29
-//this is a basic setup of the VLX code and I hope this works =)
-int main(){
-    //these are two checks on the setup of the wiring OP
-    int fd;
-    fd = wiringPiSetup();
-    if(fd < 0){
-        printf("failed to setup the wiringOP\n");
+
+// Function to perform an I2C write and check the result
+int safe_i2c_write(int fd, int reg, uint8_t value) {
+    int status = wiringPiI2CWriteReg8(fd, reg, value);
+    if (status == -1) {
+        printf("I2C WRITE FAILED for Reg 0x%X (Val 0x%X)\n", reg, value);
     }
-    printf("setup wiringOP\n");
+    return status;
+}
+
+int main() {
+    // ... (Setup checks for wiringPiSetup and wiringPiI2CSetup - assuming successful) ...
+
     int fdq = wiringPiI2CSetup(ADR);
-    if(fdq < 0){
-        printf("failed to get device from addr\n");
+    if (fdq < 0) {
+        printf("ERROR: Device setup failed.\n");
+        return 1;
     }
-    printf("device setup \n");
+    printf("Device setup successful (fdq: %d)\n", fdq);
 
-    uint8_t ReadVal = wiringPiI2CReadReg8(fdq, 0xC0);
-    printf("the 8 reg val %u \n", ReadVal);
-    uint16_t ReadVal1 = wiringPiI2CReadReg16(fdq, 0xC0);
-    printf("the 16 reg val %u \n", ReadVal1);
-    int ReadVal3 = wiringPiI2CRead(fdq);
-    printf("the reg val %u \n", ReadVal3);
-    int check = wiringPiI2CWriteReg8(fdq, 0x80, 0x33);
-    uint16_t ReadVal4 = wiringPiI2CReadReg8(fdq, 0x80);
-    printf("the 16 reg val %u \n", ReadVal1);
+    // --- VL53L0X STARTUP SEQUENCE (Mandatory) ---
+    printf("Starting VL53L0X initialization writes...\n");
+
+    // 1. Reset / Enable Sequence (Often needed for proper startup)
+    // The VL53L0X powers up in 1.8V mode, these writes move it to a known state.
+    if (safe_i2c_write(fdq, 0x88, 0x00) == -1) return 1;
+    if (safe_i2c_write(fdq, 0x80, 0x01) == -1) return 1;
+    if (safe_i2c_write(fdq, 0xFF, 0x01) == -1) return 1;
+    if (safe_i2c_write(fdq, 0x00, 0x00) == -1) return 1;
+    if (safe_i2c_write(fdq, 0x91, 0x3c) == -1) return 1;
+    if (safe_i2c_write(fdq, 0x00, 0x01) == -1) return 1;
+    if (safe_i2c_write(fdq, 0xFF, 0x00) == -1) return 1;
+
+    usleep(10000); // Wait a short time
+
+    printf("Initialization writes complete. Attempting to read Model ID (0xC0).\n");
+
+    // 2. Read the Model ID (Expected: 0xEE or 0xAA for VL53L0X)
+    int ReadResult = wiringPiI2CReadReg8(fdq, 0xC0);
+
+    if (ReadResult == -1) {
+        printf("FINAL ERROR: Read failed even after initialization. Check XSHUT/VCC.\n");
+    } else {
+        uint8_t ReadVal = (uint8_t)ReadResult;
+        printf("SUCCESS: Read 8-bit reg val from 0xC0: 0x%X (%u)\n", ReadVal, ReadVal);
+
+        if (ReadVal == 0xEE || ReadVal == 0xAA) {
+            printf("Confirmed Device ID. Communication is working!\n");
+        } else {
+            printf("Unexpected Device ID (0x%X). Wiring is OK, but sequence may be wrong.\n", ReadVal);
+        }
+    }
+
     return 0;
-
-
-
-
-
 }
