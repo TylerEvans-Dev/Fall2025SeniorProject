@@ -15,6 +15,8 @@
 #include "VL53L0X/tof.h"
 //more for the
 #define ADRTOF 0x29
+#define I2C_CHAN 3
+
 //todo implement functions here.
 void customMode(){}
 void mapping(){}
@@ -128,7 +130,7 @@ int singleReadVLX(){
     int distance;
     int model;
     int rev;
-    int fd = tofInit(0, ADRTOF, 1);
+    int fd = tofInit(3, ADRTOF, 1);
     if(fd != 1){
         //so if there is an issue one can see it
         return -1;
@@ -154,9 +156,9 @@ int main(){
                 printf("failure to use left ISR\n");
                 return -1;
         }
-    //if(beginLoop() == 1){
         customMode();
         setupPwm();
+         int fd = tofInit(I2C_CHAN, ADRTOF, 1);
         printf("working in custom mode");
         while(1){
                 forward(200);
@@ -174,10 +176,8 @@ int main(){
                 delay(1000);
                 printf("the value read is %d\n", singleReadVLX());
         }
-    //}
-   // else{
+
         printf("working in default mode");
-       // printf("the value read %i", lol());
-    //}
+
     return 0;
 }
