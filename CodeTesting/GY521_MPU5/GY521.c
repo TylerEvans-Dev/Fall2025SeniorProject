@@ -14,6 +14,6 @@ int initGY521(const char *chan){
         printf("The device is not found please try again fool\n");
         printf("the device read %d or %n \n", res, res);
     }
-    printf("success :) \n");
+    printf("success :) the value red from the device is %d \n", res);
     return 0;
 }
