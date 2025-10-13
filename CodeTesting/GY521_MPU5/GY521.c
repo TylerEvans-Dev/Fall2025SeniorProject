@@ -8,6 +8,12 @@
 #define TEMP_SCALE 340.0
 #define TEMP_FACTOR 36.53
 
+#define SMPLRT_DIV   0x19
+#define CONFIG       0x1A
+#define GYRO_CONFIG  0x1B
+#define ACCEL_CONFIG 0x1C
+
+
 int initGY521(const char *chan){
     fd = wiringPiI2CSetupInterface(chan, ADDR);
     if(fd < 0)
@@ -29,6 +35,17 @@ int initGY521(const char *chan){
         return -1;
     }
     printf("the sensor has been booted up %d \n", res2);
+
+    // Set sample rate to 1kHz/(1+7) = 125Hz
+    wiringPiI2CWriteReg8(fd, SMPLRT_DIV, 0x07);
+
+    // Set accelerometer and gyro configs
+    wiringPiI2CWriteReg8(fd, CONFIG, 0x00);
+    wiringPiI2CWriteReg8(fd, GYRO_CONFIG, 0x00);   // ±250 °/s
+    wiringPiI2CWriteReg8(fd, ACCEL_CONFIG, 0x00);  // ±2g
+
+    // Optional: select clock source (PLL with X axis gyroscope)
+    wiringPiI2CWriteReg8(fd, PW_MANG, 0x01);
     return 1;
 }
 
