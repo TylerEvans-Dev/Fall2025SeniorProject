@@ -30,7 +30,7 @@ int main(){
     printf("G x %.2f \n", readZGyr(&fd, check));
     printf("T x %.2f \n", readTemp(&fd, check));
 
-    delay(200);
+    delay(2000);
     }
     return 0;
 }

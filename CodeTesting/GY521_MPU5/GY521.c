@@ -36,15 +36,16 @@ int initGY521(const char *chan, int *fd, int *check){
         return -1;
     }
     printf("the sensor has been booted up %d \n", res2);
-    int i;
-    printf("WHO_AM_I: 0x%02X\n", wiringPiI2CReadReg8(*fd, 0x75));
-    printf("PWR_MGMT_1: 0x%02X\n", wiringPiI2CReadReg8(*fd, 0x6B));
-    printf("Dump 0x3B..0x48:\n");
-    for (i = 0x3B; i <= 0x48; ++i) {
-        int v = wiringPiI2CReadReg8(*fd, i);
-        if (v < 0) printf("reg 0x%02X: read error (%d)\n", i, v);
-        else printf("reg 0x%02X: 0x%02X (%d)\n", i, v, v);
-    }
+    //this is for error checking
+    // int i;
+    // printf("WHO_AM_I: 0x%02X\n", wiringPiI2CReadReg8(*fd, 0x75));
+    // printf("PWR_MGMT_1: 0x%02X\n", wiringPiI2CReadReg8(*fd, 0x6B));
+    // printf("Dump 0x3B..0x48:\n");
+    // for (i = 0x3B; i <= 0x48; ++i) {
+    //     int v = wiringPiI2CReadReg8(*fd, i);
+    //     if (v < 0) printf("reg 0x%02X: read error (%d)\n", i, v);
+    //     else printf("reg 0x%02X: 0x%02X (%d)\n", i, v, v);
+    // }
     *check = 1;
     return 0;
 }
@@ -137,7 +138,7 @@ float readTemp(int *fd, int check){
     if(check > 0){
         uint8_t hb = wiringPiI2CReadReg8(*fd, 0x41);
         uint8_t lb = wiringPiI2CReadReg8(*fd, 0X42);
-        return (((hb << 8) | lb) / TEMP_SCALE) + TEMP_FACTOR;
+        return ((((hb << 8) | lb)) / TEMP_SCALE) + TEMP_FACTOR;
     }
     else{
         return -1;
