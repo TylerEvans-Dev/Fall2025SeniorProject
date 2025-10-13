@@ -2,6 +2,12 @@
 #include <stdint.h>
 
 #define ADDR 0x68
+#define PW_MANG 0x6B
+#define ACCEL_XOUT_H 0x3B
+#define ACCEL_SCALE 16384.0
+#define GYRO_SCALE 131.0
+#define TEMP_SCALE 340.0
+#define TEMP_FACTOR 36.53
 
 int initGY521(const char *chan){
     fd = wiringPiI2CSetupInterface(chan, ADDR);
@@ -14,6 +20,40 @@ int initGY521(const char *chan){
         printf("The device is not found please try again fool\n");
         printf("the device read %d or %n \n", res, res);
     }
-    printf("success :) the value red from the device is %d \n", res);
+
+    printf("success the device is connected at %d and is 0x68 \n", res);
+    //sensor needs some warm up time :)
+    uint8_t res2 = wiringPiI2CWriteReg8(fd, PW_MANG, 0X00);
+    delay(10);
+    if(res2 < 0){
+        printf("error the sensor did not write to the device\n");
+        return -1;
+    }
+    printf("the sensor has been booted up %d \n", res2);
+    return 1;
+}
+
+int mpu6050_read_all(int fd, DataAccel *data) {
+    uint8_t buf[14];
+    for (int i = 0; i < 14; i++){
+        buf[i] = wiringPiI2CReadReg8(fd, ACCEL_XOUT_H + i);
+    }
+    //This is putting the data in both the higher and lower parts of the 16 bit number;
+    int16_t ax = (buf[0] << 8) | buf[1];
+    int16_t ay = (buf[2] << 8) | buf[3];
+    int16_t az = (buf[4] << 8) | buf[5];
+    int16_t temp = (buf[6] << 8) | buf[7];
+    int16_t gx = (buf[8] << 8) | buf[9];
+    int16_t gy = (buf[10] << 8) | buf[11];
+    int16_t gz = (buf[12] << 8) | buf[13];
+
+    data->ax = ax / ACCEL_SCALE;
+    data->ay = ay / ACCEL_SCALE;
+    data->az = az / ACCEL_SCALE;
+    data->gx = gx / GYRO_SCALE;
+    data->gy = gy / GYRO_SCALE;
+    data->gz = gz / GYRO_SCALE;
+    data->temp = (temp / TEMP_SCALE) + TEMP_FACTOR;
+
     return 0;
 }
