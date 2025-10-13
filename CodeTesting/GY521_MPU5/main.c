@@ -12,16 +12,25 @@ int main(){
     int fd;
     int q = wiringPiSetup();
     DataAccel d;
+    int check = 0;
     if (q < 0){
         printf("something has gone wrong with orange setup\n");
         return -1;
     }
-    int suc = initGY521("/dev/i2c-4", &fd);
+    int suc = initGY521("/dev/i2c-4", &fd, &check);
     while(1){
     int readsuc = mpu6050_read_all(&fd, &d);
     printf("A: %.2f %.2f %.2f | G: %.2f %.2f %.2f | T: %.2f°C\n",
                    d.ax, d.ay, d.az, d.gx, d.gy, d.gz, d.temp);
-    delay(20);
+    printf("A x %.2f \n", readXAce(&fd, check));
+    printf("A y %.2f \n", readYAce(&fd, check));
+    printf("A z %.2f \n", readZAce(&fd, check));
+    printf("G x %.2f \n", readXGyr(&fd, check));
+    printf("G x %.2f \n", readYGyr(&fd, check));
+    printf("G x %.2f \n", readZGyr(&fd, check));
+    printf("T x %.2f \n", readTemp(&fd, check));
+
+    delay(200);
     }
     return 0;
 }

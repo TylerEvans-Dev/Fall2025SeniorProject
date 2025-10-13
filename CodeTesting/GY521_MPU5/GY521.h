@@ -9,10 +9,6 @@
 #endif
 #include <stdint.h>
 #include <stdio.h>
-//this is the file desciptor
-static int setup = 0;
-static int scaleAcel;
-static int scaleGyro;
 typedef struct{
     float ax;
     float ay;
@@ -23,18 +19,18 @@ typedef struct{
     float temp;
 }DataAccel;
 //this will initallize the GY521
-int initGY521(const char *chan, int *fd);
+int initGY521(const char *chan, int *fd, int *check);
 
 //these are the features of the GY521 breakout board
 uint8_t readWHOAMI(int *fd);
 int mpu6050_read_all(int *fd, DataAccel *data);
-uint8_t readXAce(int *fd);
-uint8_t readYAce(int *fd);
-uint8_t readZAce(int *fd);
-uint8_t readXGyr(int *fd);
-uint8_t readYGyr(int *fd);
-uint8_t readZGyr(int *fd);
-uint8_t readTemp(int *fd);
+float readXAce(int *fd, int check);
+float readYAce(int *fd, int check);
+float readZAce(int *fd, int check);
+float readXGyr(int *fd, int check);
+float readYGyr(int *fd, int check);
+float readZGyr(int *fd, int check);
+float readTemp(int *fd, int check);
 
 
 
