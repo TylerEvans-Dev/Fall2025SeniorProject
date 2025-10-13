@@ -8,7 +8,6 @@
 #include <stdint.h>
 #include <stdio.h>
 #include "GY521.h"
-
 int main(){
     int q = wiringPiSetup();
     DataAccel d;

@@ -1,5 +1,4 @@
 #include "GY521.h"
-#include <stdint.h>
 
 #define ADDR 0x68
 #define PW_MANG 0x6B

@@ -1,4 +1,3 @@
-#include <cstdint>
 #define GY521_H
 #ifdef GY521_H
 #if defined(__APPLE__)
