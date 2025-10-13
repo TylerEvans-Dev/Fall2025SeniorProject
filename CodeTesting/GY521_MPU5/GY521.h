@@ -28,13 +28,13 @@ int initGY521(const char *chan, int *fd);
 //these are the features of the GY521 breakout board
 uint8_t readWHOAMI(int *fd);
 int mpu6050_read_all(int *fd, DataAccel *data);
-uint8_t readXAce();
-uint8_t readYAce();
-uint8_t readZAce();
-uint8_t readXGyr();
-uint8_t readYGyr();
-uint8_t readZGyr();
-uint8_t readTemp();
+uint8_t readXAce(int *fd);
+uint8_t readYAce(int *fd);
+uint8_t readZAce(int *fd);
+uint8_t readXGyr(int *fd);
+uint8_t readYGyr(int *fd);
+uint8_t readZGyr(int *fd);
+uint8_t readTemp(int *fd);
 
 
 

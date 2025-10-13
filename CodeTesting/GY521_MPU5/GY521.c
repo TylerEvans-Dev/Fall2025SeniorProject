@@ -35,18 +35,6 @@ int initGY521(const char *chan, int *fd){
         return -1;
     }
     printf("the sensor has been booted up %d \n", res2);
-
-    // // Set sample rate to 1kHz/(1+7) = 125Hz
-    // wiringPiI2CWriteReg8(fd, SMPLRT_DIV, 0x07);
-
-    // // Set accelerometer and gyro configs
-    // wiringPiI2CWriteReg8(fd, CONFIG, 0x00);
-    // wiringPiI2CWriteReg8(fd, GYRO_CONFIG, 0x00);   // ±250 °/s
-    // wiringPiI2CWriteReg8(fd, ACCEL_CONFIG, 0x00);  // ±2g
-
-    // // Optional: select clock source (PLL with X axis gyroscope)
-    // wiringPiI2CWriteReg8(fd, PW_MANG, 0x01);
-
     int i;
     printf("WHO_AM_I: 0x%02X\n", wiringPiI2CReadReg8(*fd, 0x75));
     printf("PWR_MGMT_1: 0x%02X\n", wiringPiI2CReadReg8(*fd, 0x6B));
