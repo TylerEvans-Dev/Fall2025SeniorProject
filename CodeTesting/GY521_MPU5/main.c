@@ -9,15 +9,16 @@
 #include <stdio.h>
 #include "GY521.h"
 int main(){
+    int fd;
     int q = wiringPiSetup();
     DataAccel d;
     if (q < 0){
         printf("something has gone wrong with orange setup\n");
         return -1;
     }
-    int suc = initGY521("/dev/i2c-4");
+    int suc = initGY521("/dev/i2c-4", &fd);
     while(1){
-    int readsuc = mpu6050_read_all(fd, &d);
+    int readsuc = mpu6050_read_all(&fd, &d);
     printf("A: %.2f %.2f %.2f | G: %.2f %.2f %.2f | T: %.2f°C\n",
                    d.ax, d.ay, d.az, d.gx, d.gy, d.gz, d.temp);
     delay(20);

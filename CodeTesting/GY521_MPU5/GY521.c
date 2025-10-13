@@ -14,13 +14,13 @@
 #define ACCEL_CONFIG 0x1C
 
 
-int initGY521(const char *chan){
+int initGY521(const char *chan, int *fd){
     fd = wiringPiI2CSetupInterface(chan, ADDR);
     if(fd < 0)
     {
         return -1;
     }
-    uint8_t res = wiringPiI2CReadReg8(fd, 0x75);
+    uint8_t res = wiringPiI2CReadReg8(*fd, 0x75);
     if(res != ADDR){
         printf("The device is not found please try again fool\n");
         printf("the device read %d or %n \n", res, res);
@@ -28,7 +28,7 @@ int initGY521(const char *chan){
 
     printf("success the device is connected at %d and is 0x68 \n", res);
     //sensor needs some warm up time :)
-    uint8_t res2 = wiringPiI2CWriteReg8(fd, PW_MANG, 0x00);
+    uint8_t res2 = wiringPiI2CWriteReg8(*fd, PW_MANG, 0x00);
     delay(10);
     if(res2 < 0){
         printf("error the sensor did not write to the device\n");
@@ -36,33 +36,33 @@ int initGY521(const char *chan){
     }
     printf("the sensor has been booted up %d \n", res2);
 
-    // Set sample rate to 1kHz/(1+7) = 125Hz
-    wiringPiI2CWriteReg8(fd, SMPLRT_DIV, 0x07);
+    // // Set sample rate to 1kHz/(1+7) = 125Hz
+    // wiringPiI2CWriteReg8(fd, SMPLRT_DIV, 0x07);
 
-    // Set accelerometer and gyro configs
-    wiringPiI2CWriteReg8(fd, CONFIG, 0x00);
-    wiringPiI2CWriteReg8(fd, GYRO_CONFIG, 0x00);   // ±250 °/s
-    wiringPiI2CWriteReg8(fd, ACCEL_CONFIG, 0x00);  // ±2g
+    // // Set accelerometer and gyro configs
+    // wiringPiI2CWriteReg8(fd, CONFIG, 0x00);
+    // wiringPiI2CWriteReg8(fd, GYRO_CONFIG, 0x00);   // ±250 °/s
+    // wiringPiI2CWriteReg8(fd, ACCEL_CONFIG, 0x00);  // ±2g
 
-    // Optional: select clock source (PLL with X axis gyroscope)
-    wiringPiI2CWriteReg8(fd, PW_MANG, 0x01);
+    // // Optional: select clock source (PLL with X axis gyroscope)
+    // wiringPiI2CWriteReg8(fd, PW_MANG, 0x01);
 
     int i;
-    printf("WHO_AM_I: 0x%02X\n", wiringPiI2CReadReg8(fd, 0x75));
-    printf("PWR_MGMT_1: 0x%02X\n", wiringPiI2CReadReg8(fd, 0x6B));
+    printf("WHO_AM_I: 0x%02X\n", wiringPiI2CReadReg8(*fd, 0x75));
+    printf("PWR_MGMT_1: 0x%02X\n", wiringPiI2CReadReg8(*fd, 0x6B));
     printf("Dump 0x3B..0x48:\n");
     for (i = 0x3B; i <= 0x48; ++i) {
-        int v = wiringPiI2CReadReg8(fd, i);
+        int v = wiringPiI2CReadReg8(*fd, i);
         if (v < 0) printf("reg 0x%02X: read error (%d)\n", i, v);
         else printf("reg 0x%02X: 0x%02X (%d)\n", i, v, v);
     }
     return 0;
 }
 
-int mpu6050_read_all(int fd, DataAccel *data) {
+int mpu6050_read_all(int *fd, DataAccel *data) {
     uint8_t buf[14];
     for (int i = 0; i < 14; i++){
-        buf[i] = wiringPiI2CReadReg8(fd, ACCEL_XOUT_H + i);
+        buf[i] = wiringPiI2CReadReg8(*fd, ACCEL_XOUT_H + i);
     }
     //This is putting the data in both the higher and lower parts of the 16 bit number;
     int16_t ax = (buf[0] << 8) | buf[1];
