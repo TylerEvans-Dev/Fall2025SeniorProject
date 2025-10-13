@@ -15,7 +15,7 @@
 
 
 int initGY521(const char *chan, int *fd){
-    fd = wiringPiI2CSetupInterface(chan, ADDR);
+    *fd = wiringPiI2CSetupInterface(chan, ADDR);
     if(fd < 0)
     {
         return -1;
