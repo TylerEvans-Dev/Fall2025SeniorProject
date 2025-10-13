@@ -17,7 +17,7 @@
 
 int initGY521(const char *chan, int *fd, int *check){
     *fd = wiringPiI2CSetupInterface(chan, ADDR);
-    if(fd < 0)
+    if(*fd < 0)
     {
         return -1;
     }
@@ -78,7 +78,8 @@ float readXAce(int *fd, int check){
     if(check > 0){
         uint8_t hb = wiringPiI2CReadReg8(*fd, 0x3B);
         uint8_t lb = wiringPiI2CReadReg8(*fd, 0X3C);
-        return ((hb << 8) | lb) / ACCEL_SCALE;
+        uint16_t res = ((hb << 8) | lb);
+        return (res/ACCEL_SCALE);
     }
     else{
         return -1;
@@ -88,7 +89,8 @@ float readYAce(int *fd, int check){
     if(check > 0){
         uint8_t hb = wiringPiI2CReadReg8(*fd, 0x3D);
         uint8_t lb = wiringPiI2CReadReg8(*fd, 0X3E);
-        return ((hb << 8) | lb) / ACCEL_SCALE;
+        uint16_t res = ((hb << 8) | lb);
+        return (res/ACCEL_SCALE);
     }
     else{
         return -1;
@@ -98,7 +100,8 @@ float readZAce(int *fd, int check){
     if(check > 0){
         uint8_t hb = wiringPiI2CReadReg8(*fd, 0x3F);
         uint8_t lb = wiringPiI2CReadReg8(*fd, 0X40);
-        return ((hb << 8) | lb) / ACCEL_SCALE;
+        uint16_t res = ((hb << 8) | lb);
+        return (res/ACCEL_SCALE);
     }
     else{
         return -1;
@@ -108,7 +111,8 @@ float readXGyr(int *fd, int check){
     if(check > 0){
         uint8_t hb = wiringPiI2CReadReg8(*fd, 0x43);
         uint8_t lb = wiringPiI2CReadReg8(*fd, 0X44);
-        return ((hb << 8) | lb) / GYRO_SCALE;
+        uint16_t res = ((hb << 8) | lb);
+        return res / GYRO_SCALE;
     }
     else{
         return -1;
@@ -118,7 +122,8 @@ float readYGyr(int *fd, int check){
     if(check > 0){
         uint8_t hb = wiringPiI2CReadReg8(*fd, 0x45);
         uint8_t lb = wiringPiI2CReadReg8(*fd, 0X46);
-        return ((hb << 8) | lb) / GYRO_SCALE;
+        uint16_t res = ((hb << 8) | lb);
+        return res / GYRO_SCALE;
     }
     else{
         return -1;
@@ -128,7 +133,8 @@ float readZGyr(int *fd, int check){
     if(check > 0){
         uint8_t hb = wiringPiI2CReadReg8(*fd, 0x47);
         uint8_t lb = wiringPiI2CReadReg8(*fd, 0X48);
-        return ((hb << 8) | lb) / GYRO_SCALE;
+        uint16_t res = ((hb << 8) | lb);
+        return res / GYRO_SCALE;
     }
     else{
         return -1;
@@ -138,7 +144,8 @@ float readTemp(int *fd, int check){
     if(check > 0){
         uint8_t hb = wiringPiI2CReadReg8(*fd, 0x41);
         uint8_t lb = wiringPiI2CReadReg8(*fd, 0X42);
-        return ((((hb << 8) | lb)) / TEMP_SCALE) + TEMP_FACTOR;
+        uint16_t res = (((hb << 8) | lb));
+        return ((res / TEMP_SCALE)  + TEMP_FACTOR);
     }
     else{
         return -1;
