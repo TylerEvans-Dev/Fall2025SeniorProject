@@ -28,7 +28,7 @@ int initGY521(const char *chan){
 
     printf("success the device is connected at %d and is 0x68 \n", res);
     //sensor needs some warm up time :)
-    uint8_t res2 = wiringPiI2CWriteReg8(fd, PW_MANG, 0X00);
+    uint8_t res2 = wiringPiI2CWriteReg8(fd, PW_MANG, 0x00);
     delay(10);
     if(res2 < 0){
         printf("error the sensor did not write to the device\n");
