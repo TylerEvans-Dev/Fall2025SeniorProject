@@ -46,7 +46,17 @@ int initGY521(const char *chan){
 
     // Optional: select clock source (PLL with X axis gyroscope)
     wiringPiI2CWriteReg8(fd, PW_MANG, 0x01);
-    return 1;
+
+    int i;
+    printf("WHO_AM_I: 0x%02X\n", wiringPiI2CReadReg8(fd, 0x75));
+    printf("PWR_MGMT_1: 0x%02X\n", wiringPiI2CReadReg8(fd, 0x6B));
+    printf("Dump 0x3B..0x48:\n");
+    for (i = 0x3B; i <= 0x48; ++i) {
+        int v = wiringPiI2CReadReg8(fd, i);
+        if (v < 0) printf("reg 0x%02X: read error (%d)\n", i, v);
+        else printf("reg 0x%02X: 0x%02X (%d)\n", i, v, v);
+    }
+    return 0;
 }
 
 int mpu6050_read_all(int fd, DataAccel *data) {
