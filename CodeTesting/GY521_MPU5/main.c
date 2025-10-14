@@ -19,7 +19,7 @@ int main(){
     }
     int suc = initGY521("/dev/i2c-4", &fd, &check);
     while(1){
-    int readsuc = mpu6050_read_all(&fd, &d);
+    int readsuc = mpu_read_all(&fd, &d);
     printf("A: %.2f %.2f %.2f | G: %.2f %.2f %.2f | T: %.2f°C\n",
                    d.ax, d.ay, d.az, d.gx, d.gy, d.gz, d.temp);
     printf("A x %.2f \n", readXAce(&fd, check));
