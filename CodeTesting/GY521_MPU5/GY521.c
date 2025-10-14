@@ -50,7 +50,7 @@ int initGY521(const char *chan, int *fd, int *check){
     return 0;
 }
 
-int mpu6050_read_all(int *fd, DataAccel *data) {
+int mpu_read_all(int *fd, DataAccel *data) {
     uint8_t buf[14];
     for (int i = 0; i < 14; i++){
         buf[i] = wiringPiI2CReadReg8(*fd, ACCEL_XOUT_H + i);
