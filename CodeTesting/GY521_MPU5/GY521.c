@@ -21,7 +21,7 @@ int initGY521(const char *chan, int *fd, int *check){
     {
         return -1;
     }
-    uint8_t res = wiringPiI2CReadReg8(*fd, 0x75);
+    int8_t res = wiringPiI2CReadReg8(*fd, 0x75);
     if(res != ADDR){
         printf("The device is not found please try again fool\n");
         printf("the device read %d or %n \n", res, res);
@@ -29,7 +29,7 @@ int initGY521(const char *chan, int *fd, int *check){
 
     printf("success the device is connected at %d and is 0x68 \n", res);
     //sensor needs some warm up time :)
-    uint8_t res2 = wiringPiI2CWriteReg8(*fd, PW_MANG, 0x00);
+    int8_t res2 = wiringPiI2CWriteReg8(*fd, PW_MANG, 0x00);
     delay(10);
     if(res2 < 0){
         printf("error the sensor did not write to the device\n");
@@ -76,9 +76,9 @@ int mpu_read_all(int *fd, DataAccel *data) {
 }
 float readXAce(int *fd, int check){
     if(check > 0){
-        uint8_t hb = wiringPiI2CReadReg8(*fd, 0x3B);
-        uint8_t lb = wiringPiI2CReadReg8(*fd, 0X3C);
-        uint16_t res = (uint16_t)((hb << 8) | lb);
+        int8_t hb = wiringPiI2CReadReg8(*fd, 0x3B);
+        int8_t lb = wiringPiI2CReadReg8(*fd, 0X3C);
+        int16_t res = (int16_t)((hb << 8) | lb);
         return (res/ACCEL_SCALE);
     }
     else{
@@ -87,9 +87,9 @@ float readXAce(int *fd, int check){
 }
 float readYAce(int *fd, int check){
     if(check > 0){
-        uint8_t hb = wiringPiI2CReadReg8(*fd, 0x3D);
-        uint8_t lb = wiringPiI2CReadReg8(*fd, 0X3E);
-        uint16_t res = (uint16_t)((hb << 8) | lb);
+        int8_t hb = wiringPiI2CReadReg8(*fd, 0x3D);
+        int8_t lb = wiringPiI2CReadReg8(*fd, 0X3E);
+        int16_t res = (int16_t)((hb << 8) | lb);
         return (res/ACCEL_SCALE);
     }
     else{
@@ -98,9 +98,9 @@ float readYAce(int *fd, int check){
 }
 float readZAce(int *fd, int check){
     if(check > 0){
-        uint8_t hb = wiringPiI2CReadReg8(*fd, 0x3F);
-        uint8_t lb = wiringPiI2CReadReg8(*fd, 0X40);
-        uint16_t res = (uint16_t)((hb << 8) | lb);
+        int8_t hb = wiringPiI2CReadReg8(*fd, 0x3F);
+        int8_t lb = wiringPiI2CReadReg8(*fd, 0X40);
+        int16_t res = (int16_t)((hb << 8) | lb);
         return (res/ACCEL_SCALE);
     }
     else{
@@ -109,9 +109,9 @@ float readZAce(int *fd, int check){
 }
 float readXGyr(int *fd, int check){
     if(check > 0){
-        uint8_t hb = wiringPiI2CReadReg8(*fd, 0x43);
-        uint8_t lb = wiringPiI2CReadReg8(*fd, 0X44);
-        uint16_t res = (uint16_t)((hb << 8) | lb);
+        int8_t hb = wiringPiI2CReadReg8(*fd, 0x43);
+        int8_t lb = wiringPiI2CReadReg8(*fd, 0X44);
+        int16_t res = (int16_t)((hb << 8) | lb);
         return res / GYRO_SCALE;
     }
     else{
@@ -120,9 +120,9 @@ float readXGyr(int *fd, int check){
 }
 float readYGyr(int *fd, int check){
     if(check > 0){
-        uint8_t hb = wiringPiI2CReadReg8(*fd, 0x45);
-        uint8_t lb = wiringPiI2CReadReg8(*fd, 0X46);
-        uint16_t res = (uint16_t)((hb << 8) | lb);
+        int8_t hb = wiringPiI2CReadReg8(*fd, 0x45);
+        int8_t lb = wiringPiI2CReadReg8(*fd, 0X46);
+        int16_t res = (int16_t)((hb << 8) | lb);
         return res / GYRO_SCALE;
     }
     else{
@@ -131,9 +131,9 @@ float readYGyr(int *fd, int check){
 }
 float readZGyr(int *fd, int check){
     if(check > 0){
-        uint8_t hb = wiringPiI2CReadReg8(*fd, 0x47);
-        uint8_t lb = wiringPiI2CReadReg8(*fd, 0X48);
-        uint16_t res = (uint16_t)((hb << 8) | lb);
+        int8_t hb = wiringPiI2CReadReg8(*fd, 0x47);
+        int8_t lb = wiringPiI2CReadReg8(*fd, 0X48);
+        int16_t res = (int16_t)((hb << 8) | lb);
         return res / GYRO_SCALE;
     }
     else{
@@ -142,9 +142,9 @@ float readZGyr(int *fd, int check){
 }
 float readTemp(int *fd, int check){
     if(check > 0){
-        uint8_t hb = wiringPiI2CReadReg8(*fd, 0x41);
-        uint8_t lb = wiringPiI2CReadReg8(*fd, 0X42);
-        uint16_t res = (uint16_t)(((hb << 8) | lb));
+        int8_t hb = wiringPiI2CReadReg8(*fd, 0x41);
+        int8_t lb = wiringPiI2CReadReg8(*fd, 0X42);
+        int16_t res = (int16_t)(((hb << 8) | lb));
         return ((res / TEMP_SCALE)  + TEMP_FACTOR);
     }
     else{
