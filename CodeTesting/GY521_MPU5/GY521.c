@@ -14,7 +14,13 @@
 #define GYRO_CONFIG  0x1B
 #define ACCEL_CONFIG 0x1C
 
-
+/*
+ * @function initGY521
+ * @param
+ * chan is the channel the dvice is on can be string
+ * fd is the file descrpitor int
+ * check is a flag var for enabling reads
+ */
 int initGY521(const char *chan, int *fd, int *check){
     *fd = wiringPiI2CSetupInterface(chan, ADDR);
     if(*fd < 0)
@@ -36,7 +42,7 @@ int initGY521(const char *chan, int *fd, int *check){
         return -1;
     }
     printf("the sensor has been booted up %d \n", res2);
-    //this is for error checking
+    //this is for error checking to see if the board is connected.
     // int i;
     // printf("WHO_AM_I: 0x%02X\n", wiringPiI2CReadReg8(*fd, 0x75));
     // printf("PWR_MGMT_1: 0x%02X\n", wiringPiI2CReadReg8(*fd, 0x6B));
@@ -49,7 +55,12 @@ int initGY521(const char *chan, int *fd, int *check){
     *check = 1;
     return 0;
 }
-
+/*
+ * @function mpu_read_all
+ * param
+ * @fd is file descriptor int
+ * @DataAccel is a struct included in the headerfile is documented as well
+ */
 int mpu_read_all(int *fd, DataAccel *data) {
     uint8_t buf[14];
     for (int i = 0; i < 14; i++){
@@ -74,6 +85,12 @@ int mpu_read_all(int *fd, DataAccel *data) {
 
     return 0;
 }
+/*
+ * @function readXAce read x accel,
+ * param
+ * @fd file desciptor
+ * @check is a flag var for enabling reads
+ */
 float readXAce(int *fd, int check){
     if(check > 0){
         int8_t hb = wiringPiI2CReadReg8(*fd, 0x3B);
@@ -85,6 +102,12 @@ float readXAce(int *fd, int check){
         return -1;
     }
 }
+/*
+ * @function readYAce reads y accel
+ * param
+ * @fd file desciptor
+ * @check is a flag var for enabling reads
+ */
 float readYAce(int *fd, int check){
     if(check > 0){
         int8_t hb = wiringPiI2CReadReg8(*fd, 0x3D);
@@ -96,6 +119,12 @@ float readYAce(int *fd, int check){
         return -1;
     }
 }
+/*
+ * @function readZAce reads z accel.
+ * param
+ * @fd file desciptor
+ * @check is a flag var for enabling reads
+ */
 float readZAce(int *fd, int check){
     if(check > 0){
         int8_t hb = wiringPiI2CReadReg8(*fd, 0x3F);
@@ -107,6 +136,12 @@ float readZAce(int *fd, int check){
         return -1;
     }
 }
+/*
+ * @function readXGyr reads x gyro.
+ * param
+ * @fd file desciptor
+ * @check is a flag var for enabling reads
+ */
 float readXGyr(int *fd, int check){
     if(check > 0){
         int8_t hb = wiringPiI2CReadReg8(*fd, 0x43);
@@ -118,6 +153,12 @@ float readXGyr(int *fd, int check){
         return -1;
     }
 }
+/*
+ * @function readZGyr reads Y gyro.
+ * param
+ * @fd file desciptor
+ * @check is a flag var for enabling reads
+ */
 float readYGyr(int *fd, int check){
     if(check > 0){
         int8_t hb = wiringPiI2CReadReg8(*fd, 0x45);
@@ -129,6 +170,12 @@ float readYGyr(int *fd, int check){
         return -1;
     }
 }
+/*
+ * @function readZGyr reads Z gyro.
+ * param
+ * @fd file desciptor
+ * @check is a flag var for enabling reads
+ */
 float readZGyr(int *fd, int check){
     if(check > 0){
         int8_t hb = wiringPiI2CReadReg8(*fd, 0x47);
@@ -140,6 +187,12 @@ float readZGyr(int *fd, int check){
         return -1;
     }
 }
+/*
+ * @function readTemp reads x temp.
+ * param
+ * @fd file desciptor
+ * @check is a flag var for enabling reads
+ */
 float readTemp(int *fd, int check){
     if(check > 0){
         int8_t hb = wiringPiI2CReadReg8(*fd, 0x41);

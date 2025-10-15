@@ -9,6 +9,17 @@
 #endif
 #include <stdint.h>
 #include <stdio.h>
+/*
+ * Struct is used to hold data from accel.
+ * var
+ * @ax x accel. value
+ * @ay y accel. value
+ * @az z accel  value
+ * @gx x gyro value
+ * @gy y gyro value
+ * @gz z gyro value
+ * @temp temp value
+ */
 typedef struct{
     float ax;
     float ay;

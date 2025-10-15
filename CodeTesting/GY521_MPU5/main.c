@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include "GY521.h"
 int main(){
+    //this is an example on how to use the accl.
     int fd;
     int q = wiringPiSetup();
     DataAccel d;
@@ -30,7 +31,7 @@ int main(){
     printf("G x %.2f \n", readZGyr(&fd, check));
     printf("T x %.2f \n", readTemp(&fd, check));
 
-    delay(2000);
+    delay(2000); // added the delay for creating the values
     }
     return 0;
 }
