@@ -1,13 +1,7 @@
-#if defined(__APPLE__)
-#include "../GPIO/wiringOP/wiringPi/wiringPi.h"
-#include "../GPIO/wiringOP/wiringPi/wiringPiI2C.h"
-#else
-#include <wiringPi.h>
-#include <wiringPiI2C.h>
-#endif
 #include <stdint.h>
 #include <stdio.h>
 #include "GY521.h"
+#include "cleanup.c"
 int main(){
     //this is an example on how to use the accl.
     int fd;

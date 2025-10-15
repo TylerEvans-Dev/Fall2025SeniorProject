@@ -195,8 +195,8 @@ float readZGyr(int *fd, int check){
  */
 float readTemp(int *fd, int check){
     if(check > 0){
-        int8_t hb = wiringPiI2CReadReg8(*fd, 0x41);
-        int8_t lb = wiringPiI2CReadReg8(*fd, 0X42);
+        uint8_t hb = wiringPiI2CReadReg8(*fd, 0x41);
+        uint8_t lb = wiringPiI2CReadReg8(*fd, 0X42);
         int16_t res = (int16_t)(((hb << 8) | lb));
         return ((res / TEMP_SCALE)  + TEMP_FACTOR);
     }
