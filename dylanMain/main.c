@@ -177,7 +177,36 @@ uint16_t* read_PCA_channels(int ch) {
 
 //Turn right and flip to other direction TODO
 void right_turn(void) {
-    while(1) {
+    int turncount = 960*2; // number of encoder counts to flip 180 on one wheel
+    int startr = countrm;
+    int startl = countlm;
+    int ratio = 38;
+    while (countlcm  < turncount) {
+        pwmWrite(PWM3_PIN, 0);
+        pwmWrite(PWM4_PIN, leftPWM);
+        if (countlcm > 960 * 2) {
+            if (speed > 0 && speed < PWM_RANGE) {
+                stop()
+            }
+        }
+        else if (direction == DIR_BACKWARD) {
+            if (speed > 0 && speed < PWM_RANGE) {
+                backward(speed);
+            }
+        }
+        else {
+            printf("Invalid speed (negative speed)\n");
+        }
+    }
+    stop();
+    if (direction == DIR_BACKWARD) backward(100);
+    if (direction == DIR_FORWARD) forward(100);
+    delay(300);
+    stop();
+
+    countrinit
+    while() {
+        
         uint16_t  *tofDistances =  read_PCA_channels(0);
         if (tofDistances[0] > 200) {
             delay(10);
