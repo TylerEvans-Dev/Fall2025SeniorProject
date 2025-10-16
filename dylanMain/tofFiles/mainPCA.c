@@ -48,12 +48,20 @@ uint16_t* read_PCA_channels(void) {
 }
 
 
-
-
+uint16_t read_PCA_channel(void) {
+        static uint16_t distance = 0;
+        int fd = open(I2C_BUS, O_RDWR);
+        tofInit(3, TOF_ADDR, 1);
+        distance = tofReadDistance();
+        close(fd);
+        return distance;
+}
 int main() {
+//printf("Dist: %d\n", read_PCA_channel());
 	uint16_t *d = read_PCA_channels();
 	for (int ch=0; ch <8; ch++) {
 		printf("Channel %d: Distance = %u mm\n", ch, d[ch]);
 	}
 	return 0;
+
 }
