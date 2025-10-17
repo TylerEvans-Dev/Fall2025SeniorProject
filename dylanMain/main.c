@@ -31,6 +31,8 @@
 #define DIR_STOP 0
 #define DIR_FORWARD 1
 #define DIR_BACKWARD -1
+#define DIR_RIGHT 2
+#define DIR_LEFT 3
 int currentDir = DIR_STOP;
 
 //Global encoder variables for counting encoder changes
@@ -69,11 +71,11 @@ void forward(int PWMval){
     }
     currentDir = DIR_FORWARD;
 
-    error = countrm - countlm + 98;
+    error = countrm - countlm;
     float Kp = .9;//change to tune the forward direction
     int correction = (int)(Kp * error);
-    int leftPWM = PWMval - correction ;
-    int rightPWM = PWMval + correction + 40;
+    int leftPWM = PWMval - correction - 40;
+    int rightPWM = PWMval + correction;
     if (leftPWM < 120) leftPWM = 120;
     if (leftPWM > PWM_RANGE - 800) leftPWM = PWM_RANGE - 800;
     if (rightPWM < 120) rightPWM = 120;
@@ -91,15 +93,15 @@ void backward(int PWMval){
     }
     currentDir = DIR_BACKWARD;
 
-    error = countrm - countlm - 98;
+    error = countrm - countlm;
     float Kp = .9;//change to tune the backward direction
     int correction = (int)(Kp * error);
     int leftPWM = PWMval + correction;
-    int rightPWM = PWMval - correction;
+    int rightPWM = PWMval - correction - 40;
     if (leftPWM < 120) leftPWM = 120;
-    if (leftPWM > PWM_RANGE - 700) leftPWM = PWM_RANGE - 700;
+    if (leftPWM > PWM_RANGE - 800) leftPWM = PWM_RANGE - 800;
     if (rightPWM < 120) rightPWM = 120;
-    if (rightPWM > PWM_RANGE - 700) rightPWM = PWM_RANGE - 700;
+    if (rightPWM > PWM_RANGE - 800) rightPWM = PWM_RANGE - 800;
     pwmWrite(PWM1_PIN, 0);
     pwmWrite(PWM2_PIN, rightPWM);
     pwmWrite(PWM3_PIN, 0);
@@ -176,37 +178,34 @@ uint16_t* read_PCA_channels(int ch) {
 }
 
 //Turn right and flip to other direction TODO
-void right_turn(void) {
-    int turncount = 960*2; // number of encoder counts to flip 180 on one wheel
+void turn(int direction) {
+    int turncount = 1150; // number of encoder counts to flip 180 on one wheel
     int startr = countrm;
     int startl = countlm;
-    int ratio = 38;
-    while (countlcm  < turncount) {
-        pwmWrite(PWM3_PIN, 0);
-        pwmWrite(PWM4_PIN, leftPWM);
-        if (countlcm > 960 * 2) {
-            if (speed > 0 && speed < PWM_RANGE) {
-                stop()
+    int turnr = 0;
+    int turnl = 0;
+    for (int i = 0; i < 2; i++) {
+        while ((direction == DIR_RIGHT && abs(turnr)  < turncount) || (direction == DIR_LEFT && abs(turnl) < turncount)) {
+            delay(500);
+            if (direction == DIR_RIGHT) {
+                pwmWrite(PWM3_PIN, 0);
+                pwmWrite(PWM4_PIN, 150);
+                turnr = countrm - startr;
+            }
+            if (direction == DIR_LEFT) {
+                pwmWrite (PWM1_PIN, 0);
+                pwmWrite (PWM2_PIN, 120);
+                turnl = countlm - startl;
             }
         }
-        else if (direction == DIR_BACKWARD) {
-            if (speed > 0 && speed < PWM_RANGE) {
-                backward(speed);
-            }
+        stop();
+        if (i == 0) {
+            delay(500);
+            distance_cm(10, DIR_FORWARD, 120);
+            turnr = 0;
+            turnl = 0;
         }
-        else {
-            printf("Invalid speed (negative speed)\n");
-        }
-    }
-    stop();
-    if (direction == DIR_BACKWARD) backward(100);
-    if (direction == DIR_FORWARD) forward(100);
-    delay(300);
-    stop();
-
-    countrinit
-    while() {
-        
+/*    while() {
         uint16_t  *tofDistances =  read_PCA_channels(0);
         if (tofDistances[0] > 200) {
             delay(10);
@@ -216,17 +215,27 @@ void right_turn(void) {
             }
         }
         backward(100);
+    } */
     }
+    stop();
 }
 
 //TODO:
-void customMode(){
-
-}
-
-//TODO:
-void mapping(){
-
+void look_for_edge(void){
+    while(1) {
+        uint16_t  *tofDistances =  read_PCA_channels(0);
+        if (tofDistances[0] > 200) {
+            delay(10);
+            if (tofDistances[0] > 200) {
+                stop();
+                break;
+            }
+        }
+        forward(150);
+    }
+    delay(1000);
+    distance_cm(10, DIR_BACKWARD, 100);
+    close(fd);
 }
 
 //TODO:
@@ -286,21 +295,9 @@ int main(){
     printf("WiringPi setup\n");
     setupRobot();
     printf("Robot setup\n");
-    while(1) {
-        uint16_t  *tofDistances =  read_PCA_channels(0);
-        if (tofDistances[0] > 200) {
-            delay(10);
-            if (tofDistances[0] > 200) {
-                stop();
-                break;
-            }
-        }
-        forward(150);
-    }
-    delay(1000);
-    distance_cm(10, DIR_BACKWARD, 100);
-    close(fd);
-    return 0;
-
+    look_for_edge();
+    turn(DIR_RIGHT);
+    look_for_edge();
+    turn(DIR_LEFT);
 return 0;
 }
