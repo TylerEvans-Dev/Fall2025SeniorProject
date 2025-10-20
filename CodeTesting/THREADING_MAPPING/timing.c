@@ -1,5 +1,8 @@
-//this is a testing function file written with the help of gpt
-#define _POSIX_C_SOURCE 199309L
+/* Tyler Evans U1313811
+ * testing timing function program written with the help of gpt
+ * :)
+*/
+ #define _POSIX_C_SOURCE 199309L
 #include <time.h>
 #include <stdio.h>
 
