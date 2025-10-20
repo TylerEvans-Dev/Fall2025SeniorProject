@@ -13,3 +13,6 @@
 [submodule "CodeTesting/wiringOP"]
 	path = CodeTesting/wiringOP
 	url = https://github.com/orangepi-xunlong/wiringOP.git
+[submodule "CodeTesting/PC_TESTING/raylib"]
+	path = CodeTesting/PC_TESTING/raylib
+	url = https://github.com/raysan5/raylib.git
