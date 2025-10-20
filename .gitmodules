@@ -13,3 +13,6 @@
 [submodule "CodeTesting/wiringOP"]
 	path = CodeTesting/wiringOP
 	url = https://github.com/orangepi-xunlong/wiringOP.git
+[submodule "CodeTesting/THREADING_MAPPING/wiringOP"]
+	path = CodeTesting/THREADING_MAPPING/wiringOP
+	url = https://github.com/orangepi-xunlong/wiringOP.git
