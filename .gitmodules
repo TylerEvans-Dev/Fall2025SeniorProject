@@ -16,3 +16,9 @@
 [submodule "CodeTesting/THREADING_MAPPING/wiringOP"]
 	path = CodeTesting/THREADING_MAPPING/wiringOP
 	url = https://github.com/orangepi-xunlong/wiringOP.git
+[submodule "CodeUser/raylib"]
+	path = CodeUser/raylib
+	url = https://github.com/raysan5/raylib.git
+[submodule "CodeUser/lib/raygui"]
+	path = CodeUser/lib/raygui
+	url = https://github.com/raysan5/raygui.git
