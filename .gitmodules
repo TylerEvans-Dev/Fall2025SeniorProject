@@ -25,3 +25,6 @@
 [submodule "CodeTesting/tof_Testing/VL53L0X"]
 	path = CodeTesting/tof_Testing/VL53L0X
 	url = https://github.com/bitbank2/VL53L0X.git
+[submodule "CodeTesting/tof_Testing/vl53l0x-non-arduino"]
+	path = CodeTesting/tof_Testing/vl53l0x-non-arduino
+	url = https://github.com/michael-betz/vl53l0x-non-arduino.git
