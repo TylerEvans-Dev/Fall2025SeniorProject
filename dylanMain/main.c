@@ -24,6 +24,8 @@
 #define P12 6 //encoder left
 #define P37 25 //encoder right
 #define P38 26 //encoder right
+#define BRUSHL 27
+#define BRUSHR 23
 
 //Define duty cycle and clock speed for freq of PWM and direction
 #define PWM_RANGE 1024
@@ -60,6 +62,8 @@ void stop(){
     pwmWrite(PWM2_PIN, 0);
     pwmWrite(PWM3_PIN, 0);
     pwmWrite(PWM4_PIN, 0);
+    digitalWrite(BRUSHL, LOW);
+    digitalWrite(BRUSHR, LOW);
     currentDir = DIR_STOP;
     delay(10);
 }
@@ -74,7 +78,7 @@ void forward(int PWMval){
     error = countrm - countlm;
     float Kp = .9;//change to tune the forward direction
     int correction = (int)(Kp * error);
-    int leftPWM = PWMval - correction - 40;
+    int leftPWM = PWMval - correction;
     int rightPWM = PWMval + correction;
     if (leftPWM < 120) leftPWM = 120;
     if (leftPWM > PWM_RANGE - 800) leftPWM = PWM_RANGE - 800;
@@ -97,7 +101,7 @@ void backward(int PWMval){
     float Kp = .9;//change to tune the backward direction
     int correction = (int)(Kp * error);
     int leftPWM = PWMval + correction;
-    int rightPWM = PWMval - correction - 40;
+    int rightPWM = PWMval - correction;
     if (leftPWM < 120) leftPWM = 120;
     if (leftPWM > PWM_RANGE - 800) leftPWM = PWM_RANGE - 800;
     if (rightPWM < 120) rightPWM = 120;
@@ -240,7 +244,8 @@ void look_for_edge(void){
 
 //TODO:
 void cleaning(){
-
+    digitalWrite(BRUSHR, HIGH);
+    digitalWrite(BRUSHL, LOW);
 }
 
 //Sets the pins used for PWM to PWM_OUTPUT mode and establishes the
@@ -255,6 +260,10 @@ void setupRobot(){
     pwmWrite(PWM3_PIN, 0);
     pinMode(PWM4_PIN, PWM_OUTPUT);
     pwmWrite(PWM4_PIN, 0);
+    pinMode(BRUSHL, OUTPUT);
+    digitalWrite(BRUSHL, LOW);
+    pinMode(BRUSHR, OUTPUT);
+    digitalWrite(BRUSHR, LOW);
     //setup the clock speed and duty cycle range
     pwmSetRange(PWM1_PIN, PWM_RANGE);
     pwmSetClock(PWM1_PIN, PWM_DIV);
@@ -264,6 +273,11 @@ void setupRobot(){
     pwmSetClock(PWM3_PIN, PWM_DIV);
     pwmSetRange(PWM4_PIN, PWM_RANGE);
     pwmSetClock(PWM4_PIN, PWM_DIV);
+/*    pwmSetRange(BRUSHL, 110);
+    pwmSetClock(BRUSHL, PWM_DIV);
+    pwmSetRange(BRUSHR, 110);
+    pwmSetClock(BRUSHR, PWM_DIV);
+*/
     //setup AI pins for encoder reading
     pinMode(P12, INPUT);
     pinMode(P11, INPUT);
@@ -289,15 +303,16 @@ void setupRobot(){
 
 
 //main function
-int main(){
+int main(void){
     //initializing pins and setup for robot
     wiringPiSetup();
     printf("WiringPi setup\n");
     setupRobot();
     printf("Robot setup\n");
+    cleaning();
     look_for_edge();
-    turn(DIR_RIGHT);
-    look_for_edge();
-    turn(DIR_LEFT);
+
+//    turn(DIR_LEFT);
+    
 return 0;
 }
