@@ -22,3 +22,6 @@
 [submodule "CodeUser/lib/raygui"]
 	path = CodeUser/lib/raygui
 	url = https://github.com/raysan5/raygui.git
+[submodule "CodeTesting/tof_Testing/VL53L0X"]
+	path = CodeTesting/tof_Testing/VL53L0X
+	url = https://github.com/bitbank2/VL53L0X.git
