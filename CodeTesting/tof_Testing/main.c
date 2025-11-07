@@ -1,8 +1,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <unistd.h>
-#include "vl5301.c"
-
+#include "vl5301x.c"
 
 int vl53l0x_init(const char *dev);
 uint16_t vl53l0x_read_mm(void);
