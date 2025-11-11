@@ -31,9 +31,9 @@
 //Define duty cycle and clock speed for freq of PWM and direction
 #define PWM_RANGE 1024
 #define PWM_DIV 1
-#define PWM_SLOW 400
-#define PWM_MEDIUM 800
-#define PWM_SOFT_CAP 1024 - 200
+#define PWM_SLOW 300
+#define PWM_MEDIUM 600
+#define PWM_SOFT_CAP 1024
 int left_offset = 0;//change this
 int right_offset = 0;
 
@@ -58,7 +58,8 @@ float ki = 0;
 float kd = 0;
 int32_t errorIntegral = 0;
 int32_t prevError = 0;
-
+int32_t lastCountL = 0;
+int32_t lastCountR = 0;
 //Global variables for I2C
 #define I2C_BUS "/dev/i2c-4"
 #define TCA_ADDR 0x70
@@ -268,10 +269,10 @@ void look_for_edge(void){
                 break;
             }
         }
-        forward(PWM_SLOW);
+        forward(PWM_MEDIUM);
     }
     delay(25);
-    distance_cm(10, DIR_BACKWARD, PWM_SLOW);
+    distance_cm(10, DIR_BACKWARD, PWM_MEDIUM);
     close(fd);
 }
 
