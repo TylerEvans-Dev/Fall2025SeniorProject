@@ -12,7 +12,6 @@ void initPinIR(int PIN){
 
 int readPinIR(int PIN){
     int val = digitalRead(PIN);
-    printf("GGGGGG the value red is %i \n ", val);
     //returns 1 if on surface pin will be high
     if(!val){
         return 1;
