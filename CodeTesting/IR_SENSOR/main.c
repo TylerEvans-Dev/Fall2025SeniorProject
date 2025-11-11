@@ -13,7 +13,7 @@
 #define PIN40 27
 int main(){
     int c = wiringPiSetup();
-    if(!c){
+    if(c == -1){
         printf("there was an issue with setup :( \n");
     }
     //used to init the pins

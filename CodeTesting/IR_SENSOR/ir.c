@@ -7,7 +7,7 @@
 #endif
 
 void initPinIR(int PIN){
-    orangepi_set_gpio_mode(PIN, INPUT);
+    pinMode(PIN, INPUT);
 }
 
 int readPinIR(int PIN){
