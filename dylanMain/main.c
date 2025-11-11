@@ -31,9 +31,11 @@
 //Define duty cycle and clock speed for freq of PWM and direction
 #define PWM_RANGE 1024
 #define PWM_DIV 1
-#define PWM_SLOW 200
-#define PWM_MEDIUM 400
-#define PWM_SOFT_CAP 1024 - 600
+#define PWM_SLOW 400
+#define PWM_MEDIUM 800
+#define PWM_SOFT_CAP 1024 - 200
+int left_offset = 0;//change this
+int right_offset = 0;
 
 //sets initial direction and defines different states for forward/backward/right/left/stop
 #define DIR_STOP 0
@@ -51,8 +53,8 @@ volatile uint8_t prevrm = 0;
 const int8_t transTable[4][4] = {{0, 1, -1 , 0}, {-1, 0, 0, 1}, {1,0,0,-1}, {0,-1,1,0}}; //this is the trans. table for the encoder count.
 
 //PID weights and error global variables
-float kp = .9;
-float ki = .01;
+float kp = 30;
+float ki = 0;
 float kd = 0;
 int32_t errorIntegral = 0;
 int32_t prevError = 0;
@@ -103,14 +105,14 @@ void forward(int PWMval){
     }
     currentDir = DIR_FORWARD;
 
-    int error = countrm - countlm;
+    int error = countlm - countrm;
     errorIntegral += error;
     int derivative = error - prevError;
     prevError = error;
     float pid = kp * error + ki * errorIntegral + kd * derivative;
     int correction = (int)pid;
-    int leftPWM = PWMval - correction;
-    int rightPWM = PWMval + correction;
+    int leftPWM = PWMval - correction - left_offset;
+    int rightPWM = PWMval + correction - right_offset;
     if (leftPWM < PWM_SLOW) leftPWM = PWM_SLOW;
     if (leftPWM > PWM_SOFT_CAP) leftPWM = PWM_SOFT_CAP;
     if (rightPWM < PWM_SLOW) rightPWM = PWM_SLOW;
@@ -131,14 +133,14 @@ void backward(int PWMval){
     }
     currentDir = DIR_BACKWARD;
 
-    int error = countrm - countlm;
+    int error = countlm - countrm;
     errorIntegral += error;
     int derivative = error - prevError;
     prevError = error;
     float pid = kp * error + ki * errorIntegral + kd * derivative;
     int correction = (int)pid;
-    int leftPWM = PWMval - correction;
-    int rightPWM = PWMval + correction;
+    int leftPWM = PWMval - correction - right_offset;
+    int rightPWM = PWMval + correction - left_offset;
     if (leftPWM < PWM_SLOW) leftPWM = PWM_SLOW;
     if (leftPWM > PWM_SOFT_CAP) leftPWM = PWM_SOFT_CAP;
     if (rightPWM < PWM_SLOW) rightPWM = PWM_SLOW;
@@ -266,10 +268,10 @@ void look_for_edge(void){
                 break;
             }
         }
-        forward(150);
+        forward(PWM_SLOW);
     }
-    delay(50);
-    distance_cm(10, DIR_BACKWARD, 100);
+    delay(25);
+    distance_cm(10, DIR_BACKWARD, PWM_SLOW);
     close(fd);
 }
 
