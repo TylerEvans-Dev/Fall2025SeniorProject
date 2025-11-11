@@ -31,10 +31,10 @@
 //Define duty cycle and clock speed for freq of PWM and direction
 #define PWM_RANGE 1024
 #define PWM_DIV 1
-#define PWM_SLOW 300
-#define PWM_MEDIUM 600
+#define PWM_SLOW 250
+#define PWM_MEDIUM 500
 #define PWM_SOFT_CAP 1024
-int left_offset = 0;//change this
+int left_offset = 200;//change this
 int right_offset = 0;
 
 //sets initial direction and defines different states for forward/backward/right/left/stop
@@ -53,7 +53,7 @@ volatile uint8_t prevrm = 0;
 const int8_t transTable[4][4] = {{0, 1, -1 , 0}, {-1, 0, 0, 1}, {1,0,0,-1}, {0,-1,1,0}}; //this is the trans. table for the encoder count.
 
 //PID weights and error global variables
-float kp = 30;
+float kp = 20;
 float ki = 0;
 float kd = 0;
 int32_t errorIntegral = 0;
