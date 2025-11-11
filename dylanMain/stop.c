@@ -6,40 +6,58 @@
 #include <time.h>
 #include <wiringPi.h>
 #include <softPwm.h>
-#define PWM4_PIN 9
-#define MAX_RANGE_PWM 100
-#define PWM1_PIN 21
-#define PWM2_PIN 22
-#define PWM3_PIN 2
-#define PWM4_PIN 9
-#define MAX_RANGE_PWM 100
 
-void setupPwm(){
-    //belong to motor 1
-    softPwmCreate(PWM1_PIN, 0, MAX_RANGE_PWM); //red pin
-    softPwmCreate(PWM2_PIN, 0, MAX_RANGE_PWM); //black pin
-    //belong to motor 2
-    softPwmCreate(PWM3_PIN, 0, MAX_RANGE_PWM);//red pin
-    softPwmCreate(PWM4_PIN, 0, MAX_RANGE_PWM); //black pin
+#define PWM1_PIN 21 //right motor fwd
+#define PWM2_PIN 22 //right motor rev
+#define PWM3_PIN 2 //left motor fwd
+#define PWM4_PIN 9 //left motor rev
+#define P11 5 //encoder left
+#define P12 6 //encoder left
+#define P37 25 //encoder right
+#define P38 26 //encoder right
+#define BRUSHL 27 //brush left PWM
+#define BRUSHR 23 //brush right PWM
+#define VACL 24 //vacuum left PWM
+#define VACR 20 //vacuum right PWM
+
+void stop() {
+    pwmWrite(PWM1_PIN, 0);
+    pwmWrite(PWM2_PIN, 0);
+    pwmWrite(PWM3_PIN, 0);
+    pwmWrite(PWM4_PIN, 0);
+    digitalWrite(BRUSHL, LOW);
+    softPwmWrite(BRUSHR, 0);
+    digitalWrite(VACL, LOW);
+    softPwmWrite(VACR, 0);
+    delay(10);
 }
 
-void stop(){
-    //must stop all to so set to zero.
-    softPwmWrite(PWM1_PIN, 0);
-    softPwmWrite(PWM2_PIN, 0);
-    softPwmWrite(PWM3_PIN, 0);
-    softPwmWrite(PWM4_PIN, 0);
-    usleep(10); //added delay to help motor slow down
-}
+void setupRobot(){
+    //setup the pinmode and initialize to zero for chasis motors
+    pinMode(PWM1_PIN, PWM_OUTPUT);
+    pwmWrite(PWM1_PIN, 0);
+    pinMode(PWM2_PIN, PWM_OUTPUT);
+    pwmWrite(PWM2_PIN, 0);
+    pinMode(PWM3_PIN, PWM_OUTPUT);
+    pwmWrite(PWM3_PIN, 0);
+    pinMode(PWM4_PIN, PWM_OUTPUT);
+    pwmWrite(PWM4_PIN, 0);
 
-void turn(float deg){
-    //TODO
+    //setup soft pwm for vacuum/brush
+    pinMode(BRUSHL, OUTPUT);
+    digitalWrite(BRUSHL, LOW);
+    softPwmCreate(BRUSHR, 0, 100);
+    softPwmWrite(BRUSHR, 0);
+    pinMode(VACL, OUTPUT);
+    digitalWrite(VACL, LOW);
+    softPwmCreate(VACR, 0, 100);
+    softPwmWrite(VACR, 0);
 }
 
 //main function
 int main(){
-        wiringPiSetup();
-        setupPwm();
-        stop();
+    wiringPiSetup();
+    setupRobot();
+    stop();
     return 0;
 }

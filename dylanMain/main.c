@@ -14,7 +14,6 @@
 
 
 
-
 //Define pins for PWM/IO
 #define PWM1_PIN 21 //right motor fwd
 #define PWM2_PIN 22 //right motor rev
@@ -24,26 +23,39 @@
 #define P12 6 //encoder left
 #define P37 25 //encoder right
 #define P38 26 //encoder right
-#define BRUSHL 27
-#define BRUSHR 23
+#define BRUSHL 27 //brush left PWM
+#define BRUSHR 23 //brush right PWM
+#define VACL 24 //vacuum left PWM
+#define VACR 20 //vacuum right PWM
 
 //Define duty cycle and clock speed for freq of PWM and direction
 #define PWM_RANGE 1024
 #define PWM_DIV 1
+#define PWM_SLOW 200
+#define PWM_MEDIUM 400
+#define PWM_SOFT_CAP 1024 - 600
+
+//sets initial direction and defines different states for forward/backward/right/left/stop
 #define DIR_STOP 0
+int currentDir = DIR_STOP;
 #define DIR_FORWARD 1
 #define DIR_BACKWARD -1
 #define DIR_RIGHT 2
 #define DIR_LEFT 3
-int currentDir = DIR_STOP;
 
 //Global encoder variables for counting encoder changes
 volatile int32_t countlm = 0;
 volatile uint8_t prevlm = 0;
 volatile int32_t countrm = 0;
 volatile uint8_t prevrm = 0;
-volatile int32_t error = 0;
 const int8_t transTable[4][4] = {{0, 1, -1 , 0}, {-1, 0, 0, 1}, {1,0,0,-1}, {0,-1,1,0}}; //this is the trans. table for the encoder count.
+
+//PID weights and error global variables
+float kp = .9;
+float ki = .01;
+float kd = 0;
+int32_t errorIntegral = 0;
+int32_t prevError = 0;
 
 //Global variables for I2C
 #define I2C_BUS "/dev/i2c-4"
@@ -63,56 +75,82 @@ void stop(){
     pwmWrite(PWM3_PIN, 0);
     pwmWrite(PWM4_PIN, 0);
     digitalWrite(BRUSHL, LOW);
-    digitalWrite(BRUSHR, LOW);
+    softPwmWrite(BRUSHR, 0);
+    digitalWrite(VACL, LOW);
+    softPwmWrite(VACR, 0);
     currentDir = DIR_STOP;
     delay(10);
 }
 
+//TODO: need to verify working as expected and not nuisance
+//sets the PWM and DO to a HIGH state in order to "lock" motors
+void brake(){
+    pwmWrite(PWM1_PIN, PWM_RANGE);
+    pwmWrite(PWM2_PIN, PWM_RANGE);
+    pwmWrite(PWM3_PIN, PWM_RANGE);
+    pwmWrite(PWM4_PIN, PWM_RANGE);
+    delay(100);
+
+}
+
+//TODO: needs PID tuning
 //PWM forward command
 void forward(int PWMval){
     if (currentDir == DIR_BACKWARD) {
         stop();
+        errorIntegral = 0;
+        prevError = 0;
     }
     currentDir = DIR_FORWARD;
 
-    error = countrm - countlm;
-    float Kp = .9;//change to tune the forward direction
-    int correction = (int)(Kp * error);
+    int error = countrm - countlm;
+    errorIntegral += error;
+    int derivative = error - prevError;
+    prevError = error;
+    float pid = kp * error + ki * errorIntegral + kd * derivative;
+    int correction = (int)pid;
     int leftPWM = PWMval - correction;
     int rightPWM = PWMval + correction;
-    if (leftPWM < 120) leftPWM = 120;
-    if (leftPWM > PWM_RANGE - 800) leftPWM = PWM_RANGE - 800;
-    if (rightPWM < 120) rightPWM = 120;
-    if (rightPWM > PWM_RANGE - 800) rightPWM = PWM_RANGE - 800;
+    if (leftPWM < PWM_SLOW) leftPWM = PWM_SLOW;
+    if (leftPWM > PWM_SOFT_CAP) leftPWM = PWM_SOFT_CAP;
+    if (rightPWM < PWM_SLOW) rightPWM = PWM_SLOW;
+    if (rightPWM > PWM_SOFT_CAP) rightPWM = PWM_SOFT_CAP;
     pwmWrite(PWM1_PIN, rightPWM);
     pwmWrite(PWM2_PIN, 0);
     pwmWrite(PWM3_PIN, leftPWM);
     pwmWrite(PWM4_PIN, 0);
 }
 
+//TODO: needs PID tuning
 //PWM backward command
 void backward(int PWMval){
     if (currentDir == DIR_FORWARD){
         stop();
+        errorIntegral = 0;
+        prevError = 0;
     }
     currentDir = DIR_BACKWARD;
 
-    error = countrm - countlm;
-    float Kp = .9;//change to tune the backward direction
-    int correction = (int)(Kp * error);
-    int leftPWM = PWMval + correction;
-    int rightPWM = PWMval - correction;
-    if (leftPWM < 120) leftPWM = 120;
-    if (leftPWM > PWM_RANGE - 800) leftPWM = PWM_RANGE - 800;
-    if (rightPWM < 120) rightPWM = 120;
-    if (rightPWM > PWM_RANGE - 800) rightPWM = PWM_RANGE - 800;
+    int error = countrm - countlm;
+    errorIntegral += error;
+    int derivative = error - prevError;
+    prevError = error;
+    float pid = kp * error + ki * errorIntegral + kd * derivative;
+    int correction = (int)pid;
+    int leftPWM = PWMval - correction;
+    int rightPWM = PWMval + correction;
+    if (leftPWM < PWM_SLOW) leftPWM = PWM_SLOW;
+    if (leftPWM > PWM_SOFT_CAP) leftPWM = PWM_SOFT_CAP;
+    if (rightPWM < PWM_SLOW) rightPWM = PWM_SLOW;
+    if (rightPWM > PWM_SOFT_CAP) rightPWM = PWM_SOFT_CAP;
     pwmWrite(PWM1_PIN, 0);
     pwmWrite(PWM2_PIN, rightPWM);
     pwmWrite(PWM3_PIN, 0);
     pwmWrite(PWM4_PIN, leftPWM);
 }
 
-//Go specified distance in mm and given direction DIR_FOR/DIR_REV and start speed TODO
+//TODO: needs tuning after robot/motor changes
+//Go specified distance in mm and given direction DIR_FOR/DIR_REV and start speed
 void distance_cm(int cm, int direction, int speed) {
     int startr = countrm;
     int startl = countlm;
@@ -140,14 +178,11 @@ void distance_cm(int cm, int direction, int speed) {
             printf("Invalid speed (negative speed)\n");
         }
     }
-    stop();
-    if (direction == DIR_BACKWARD) backward(100);
-    if (direction == DIR_FORWARD) forward(100);
-    delay(300);
+    brake();
     stop();
 }
 
-//Right encoder counter
+//Right chasis encoder counter
 void encoder_r_isr(void){
     uint8_t a = digitalRead(P37);
     uint8_t b = digitalRead(P38);
@@ -157,7 +192,7 @@ void encoder_r_isr(void){
 //    printf("The r value is %i \n", countrm);
 }
 
-//Left encoder counter
+//Left chasis encoder counter
 void encoder_l_isr(void){
     uint8_t a = digitalRead(P11);
     uint8_t b = digitalRead(P12);
@@ -181,7 +216,8 @@ uint16_t* read_PCA_channels(int ch) {
     return distances;
 }
 
-//Turn right and flip to other direction TODO
+//TODO: this needs tuning badly
+//Turn right, flip 180, and point to next parallel path in other direction
 void turn(int direction) {
     int turncount = 1150; // number of encoder counts to flip 180 on one wheel
     int startr = countrm;
@@ -202,6 +238,7 @@ void turn(int direction) {
                 turnl = countlm - startl;
             }
         }
+        brake();
         stop();
         if (i == 0) {
             delay(500);
@@ -209,49 +246,45 @@ void turn(int direction) {
             turnr = 0;
             turnl = 0;
         }
-/*    while() {
-        uint16_t  *tofDistances =  read_PCA_channels(0);
-        if (tofDistances[0] > 200) {
-            delay(10);
-            if (tofDistances[0] > 200) {
-                stop();
-                break;
-            }
-        }
-        backward(100);
-    } */
     }
+    brake();
     stop();
 }
 
-//TODO:
+//TODO: verify this isnt causing delay
+//read sensors and go forward until it reads greater than
+//200 take a verification measurment and stop
 void look_for_edge(void){
     while(1) {
         uint16_t  *tofDistances =  read_PCA_channels(0);
         if (tofDistances[0] > 200) {
-            delay(10);
+            delay(50);
+            tofDistances = read_PCA_channels(0);
             if (tofDistances[0] > 200) {
+                brake();
                 stop();
                 break;
             }
         }
         forward(150);
     }
-    delay(1000);
+    delay(50);
     distance_cm(10, DIR_BACKWARD, 100);
     close(fd);
 }
 
-//TODO:
+//TODO: verify that this is working with both vacuum and brush
 void cleaning(){
-    digitalWrite(BRUSHR, HIGH);
-    digitalWrite(BRUSHL, LOW);
+    digitalWrite(BRUSHL, LOW); //soft pwm direction
+    softPwmWrite(BRUSHR, 30); //soft pwm duty cycle %
+    digitalWrite(VACL, LOW); //soft pwm direction
+    softPwmWrite(VACR, 60); //soft pwm duty cycle %
 }
 
 //Sets the pins used for PWM to PWM_OUTPUT mode and establishes the
 //max duty cydle & clock speed for PWM.
 void setupRobot(){
-    //setup the pinmode and initialize to zero digital out used to prevent PWM sync
+    //setup the pinmode and initialize to zero for chasis motors
     pinMode(PWM1_PIN, PWM_OUTPUT);
     pwmWrite(PWM1_PIN, 0);
     pinMode(PWM2_PIN, PWM_OUTPUT);
@@ -260,11 +293,18 @@ void setupRobot(){
     pwmWrite(PWM3_PIN, 0);
     pinMode(PWM4_PIN, PWM_OUTPUT);
     pwmWrite(PWM4_PIN, 0);
+
+    //setup soft pwm for vacuum/brush
     pinMode(BRUSHL, OUTPUT);
     digitalWrite(BRUSHL, LOW);
-    pinMode(BRUSHR, OUTPUT);
-    digitalWrite(BRUSHR, LOW);
-    //setup the clock speed and duty cycle range
+    softPwmCreate(BRUSHR, 0, 100);
+    softPwmWrite(BRUSHR, 0);
+    pinMode(VACL, OUTPUT);
+    digitalWrite(VACL, LOW);
+    softPwmCreate(VACR, 0, 100);
+    softPwmWrite(VACR, 0);
+
+    //setup the clock speed and duty cycle range for chasis motors
     pwmSetRange(PWM1_PIN, PWM_RANGE);
     pwmSetClock(PWM1_PIN, PWM_DIV);
     pwmSetRange(PWM2_PIN, PWM_RANGE);
@@ -273,23 +313,19 @@ void setupRobot(){
     pwmSetClock(PWM3_PIN, PWM_DIV);
     pwmSetRange(PWM4_PIN, PWM_RANGE);
     pwmSetClock(PWM4_PIN, PWM_DIV);
-/*    pwmSetRange(BRUSHL, 110);
-    pwmSetClock(BRUSHL, PWM_DIV);
-    pwmSetRange(BRUSHR, 110);
-    pwmSetClock(BRUSHR, PWM_DIV);
-*/
-    //setup AI pins for encoder reading
+
+    //setup DI pins for encoder reading chasis motors and start reading indefinetly
     pinMode(P12, INPUT);
     pinMode(P11, INPUT);
     pinMode(P37, INPUT);
     pinMode(P38, INPUT);
-    //setup encoders to start reading
     prevlm = (digitalRead(P11) << 1) | digitalRead(P12);
     prevrm = (digitalRead(P37) << 1) | digitalRead(P38);
     wiringPiISR(P11, INT_EDGE_BOTH, &encoder_l_isr);
     wiringPiISR(P12, INT_EDGE_BOTH, &encoder_l_isr);
     wiringPiISR(P37, INT_EDGE_BOTH, &encoder_r_isr);
     wiringPiISR(P38, INT_EDGE_BOTH, &encoder_r_isr);
+
     //initialize multiplexer for tof sensors
     fd = open(I2C_BUS, O_RDWR);
     for (int ch=0; ch <8; ch++) {
@@ -309,10 +345,11 @@ int main(void){
     printf("WiringPi setup\n");
     setupRobot();
     printf("Robot setup\n");
+
+    //start to do "main" loop and go back/fourth and clean
     cleaning();
     look_for_edge();
 
 //    turn(DIR_LEFT);
-    
 return 0;
 }
