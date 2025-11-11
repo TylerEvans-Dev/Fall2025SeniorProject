@@ -1,6 +1,6 @@
 //used for the main program
 #include <stdio.h>
-#include "IR.h"
+#include "ir.h"
 #include "timing.c"
 #include <unistd.h>
 //used system dependent
