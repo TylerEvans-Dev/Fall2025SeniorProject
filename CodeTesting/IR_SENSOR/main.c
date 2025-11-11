@@ -9,8 +9,8 @@
 #else
 #include <wiringPi.h>
 #endif
-#define PIN39 39
-#define PIN40 40
+#define PIN39 26
+#define PIN40 27
 int main(){
     int c = wiringPiSetup();
     if(!c){
@@ -22,10 +22,10 @@ int main(){
     //while loop for testing
     while(1){
         //to test this sensor I used the timing.c to measure the time
-        check_run_time(readPinIR, PIN39, "testing read if there is pin.");
-        check_run_time(readIRObj, PIN40,    "testing time to read if an object present.");
+        check_run_time(readPinIR, PIN39, "testing read if there is pin.\n");
+        check_run_time(readIRObj, PIN40,    "testing time to read if an object present.\n");
         printf("the value for measured for pin 39 %i \n", readPinIR(PIN39));
         printf("the value for the measured for pin 40 %i \n", readIRObj(PIN40));
-        usleep(1000);
+        sleep(1);
     }
 }
