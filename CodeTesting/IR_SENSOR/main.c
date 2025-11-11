@@ -22,6 +22,7 @@ int main(){
     //while loop for testing
     while(1){
         //to test this sensor I used the timing.c to measure the time
+        printf("\n");
         check_run_time(readPinIR, PIN39, "testing read if there is pin.\n");
         check_run_time(readIRObj, PIN40,    "testing time to read if an object present.\n");
         printf("the value for measured for pin 39 %i \n", readPinIR(PIN39));
