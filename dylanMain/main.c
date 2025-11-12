@@ -235,13 +235,13 @@ void turn(int direction) {
         while ((direction == DIR_RIGHT && abs(turnr)  < turncount) || (direction == DIR_LEFT && abs(turnl) < turncount)) {
             delay(500);
             if (direction == DIR_RIGHT) {
-                pwmWrite(PWM3_PIN, -400);
-                pwmWrite(PWM4_PIN, 400);
+                pwmWrite(PWM3_PIN, PWM_MEDIUM);
+                pwmWrite(PWM4_PIN, PWM_MEDIUM);
                 turnr = countrm - startr;
             }
             if (direction == DIR_LEFT) {
-                pwmWrite (PWM1_PIN, 0);
-                pwmWrite (PWM2_PIN, 120);
+                pwmWrite (PWM1_PIN, PWM_MEDIUM);
+                pwmWrite (PWM2_PIN, PWM_MEDIUM);
                 turnl = countlm - startl;
             }
         }
@@ -356,6 +356,10 @@ int main(void){
     //start to do "main" loop and go back/fourth and clean
     cleaning();
     //look_for_edge();
+    //
+    // testing the turn should go left
     turn(DIR_LEFT);
+    // turn should go right
+    turn(DIR_RIGHT);
 return 0;
 }
