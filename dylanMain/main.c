@@ -231,28 +231,33 @@ void turn(int direction) {
     int startl = countlm;
     int turnr = 0;
     int turnl = 0;
-    for (int i = 0; i < 2; i++) {
-        while ((direction == DIR_RIGHT && abs(turnr)  < turncount) || (direction == DIR_LEFT && abs(turnl) < turncount)) {
-            delay(500);
-            if (direction == DIR_RIGHT) {
-                pwmWrite(PWM3_PIN, PWM_MEDIUM);
-                pwmWrite(PWM4_PIN, PWM_MEDIUM);
-                turnr = countrm - startr;
-            }
-            if (direction == DIR_LEFT) {
-                pwmWrite (PWM1_PIN, PWM_MEDIUM);
-                pwmWrite (PWM2_PIN, PWM_MEDIUM);
-                turnl = countlm - startl;
-            }
-        }
-        brake();
-        stop();
-        if (i == 0) {
-            delay(500);
-            distance_cm(10, DIR_FORWARD, 120);
-            turnr = 0;
-            turnl = 0;
-        }
+    // for (int i = 0; i < 2; i++) {
+    //     while ((direction == DIR_RIGHT && abs(turnr)  < turncount) || (direction == DIR_LEFT && abs(turnl) < turncount)) {
+    //         delay(500);
+    //         if (direction == DIR_RIGHT) {
+    //             pwmWrite(PWM3_PIN, PWM_MEDIUM);
+    //             pwmWrite(PWM4_PIN, PWM_MEDIUM);
+    //             turnr = countrm - startr;
+    //         }
+    //         if (direction == DIR_LEFT) {
+    //             pwmWrite (PWM1_PIN, PWM_MEDIUM);
+    //             pwmWrite (PWM2_PIN, PWM_MEDIUM);
+    //             turnl = countlm - startl;
+    //         }
+    //     }
+    //     brake();
+    //     stop();
+    //     if (i == 0) {
+    //         delay(500);
+    //         distance_cm(10, DIR_FORWARD, 120);
+    //         turnr = 0;
+    //         turnl = 0;
+    //     }
+    // }
+    int i = 0;
+    while(i > 2000000){
+        pwmWrite(PWM1_PIN, PWM_MEDIUM);
+        pwmWrite(PWM2_PIN, PWM_MEDIUM);
     }
     brake();
     stop();
