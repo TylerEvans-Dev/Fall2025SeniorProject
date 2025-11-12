@@ -258,7 +258,7 @@ void turn(int direction) {
     while(i < 2000000){
         pwmWrite(PWM1_PIN, PWM_MEDIUM);
         pwmWrite(PWM2_PIN, 0);
-        pwmWrite(PWM3_PIN, PWM_MEDIUM);
+        pwmWrite(PWM3_PIN, -1*PWM_MEDIUM);
         pwmWrite(PWM4_PIN, 0);
         i++;
     }
@@ -310,14 +310,14 @@ void setupRobot(){
     pwmWrite(PWM4_PIN, 0);
 
     //setup soft pwm for vacuum/brush
-    pinMode(BRUSHL, OUTPUT);
-    digitalWrite(BRUSHL, LOW);
-    softPwmCreate(BRUSHR, 0, 100);
-    softPwmWrite(BRUSHR, 0);
-    pinMode(VACL, OUTPUT);
-    digitalWrite(VACL, LOW);
-    softPwmCreate(VACR, 0, 100);
-    softPwmWrite(VACR, 0);
+    // pinMode(BRUSHL, OUTPUT);
+    // digitalWrite(BRUSHL, LOW);
+    // softPwmCreate(BRUSHR, 0, 100);
+    // softPwmWrite(BRUSHR, 0);
+    // pinMode(VACL, OUTPUT);
+    // digitalWrite(VACL, LOW);
+    // softPwmCreate(VACR, 0, 100);
+    // softPwmWrite(VACR, 0);
 
     //setup the clock speed and duty cycle range for chasis motors
     pwmSetRange(PWM1_PIN, PWM_RANGE);
