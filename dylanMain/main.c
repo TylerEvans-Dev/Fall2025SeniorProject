@@ -192,7 +192,7 @@ void encoder_r_isr(void){
     uint8_t cur = (a << 1) | b;
     countrm += transTable[prevrm][cur];
     prevrm = cur;
-//    printf("The r value is %i \n", countrm);
+    printf("The r value is %i \n", countrm);
 }
 
 //Left chasis encoder counter
@@ -202,7 +202,7 @@ void encoder_l_isr(void){
     uint8_t cur = (a << 1) | b;
     countlm += transTable[prevlm][cur];
     prevlm = cur;
-//    printf("The l value is %i \n", countlm);
+    printf("The l value is %i \n", countlm);
 }
 
 //Reads the encoder values of PCA I2C channels returns as array
@@ -227,12 +227,20 @@ void turn(int direction) {
     int startl = countlm;
     int turnr = 0;
     int turnl = 0;
-    for (int i = 0; i < 2; i++) {
-        while ((direction == DIR_RIGHT && abs(turnr)  < turncount) || (direction == DIR_LEFT && abs(turnl) < turncount)) {
-            delay(500);
-            if (direction == DIR_RIGHT) {
-                pwmWrite(PWM3_PIN, 0);
-                pwmWrite(PWM4_PIN, 150);
+    //this is to make the robot drive fowards to start measuring the edge.
+    delay(500); // why do we have this addtional delay I do not see the purpose of it.
+    distance_cm(10, DIR_FORWARD, 120);
+    //sets the values to be zero for turnr and turnl. so we can start counting
+    turnr = 0;
+    turnl = 0;
+
+    brake();
+    stop();
+    while ((direction == DIR_RIGHT && abs(turnr)  < turncount) || (direction == DIR_LEFT && abs(turnl) < turncount)) {
+        delay(500); // I am curious why we have this delay as well.
+        if (direction == DIR_RIGHT) {
+            pwmWrite(PWM3_PIN, 0);
+            pwmWrite(PWM4_PIN, 150);
                 turnr = countrm - startr;
             }
             if (direction == DIR_LEFT) {
@@ -241,16 +249,7 @@ void turn(int direction) {
                 turnl = countlm - startl;
             }
         }
-        brake();
-        stop();
-        if (i == 0) {
-            delay(500);
-            distance_cm(10, DIR_FORWARD, 120);
-            turnr = 0;
-            turnl = 0;
-        }
-    }
-    brake();
+    brake(); // why do we have break and stop? do they not do simlar things.
     stop();
 }
 
@@ -352,7 +351,15 @@ int main(void){
     //start to do "main" loop and go back/fourth and clean
     cleaning();
     look_for_edge();
-
-//    turn(DIR_LEFT);
+    /*TEST ONE test to see if the vac. works and is code is complete */
+    //cleaning();
+    /*TEST TWO test break function goal to lock motors */
+    //distance_cm(10, DIR_FORWARD, 150); //goal to travel 10 cm
+    //brake(); //test if it stops the motors
+    /*TEST THREE  PID testing/ putting distance cm in its place*/
+    //distance_cm(10, DIR_FORWARD, 150); //goal to travel 10 cm
+    /*Test Four turn testing with new motors we have a diffrent count so we need to change it*/
+    //turn(DIR_LEFT);
+    /* if additional time we can start putting things in threads to enable threading features we intend. */
 return 0;
 }
