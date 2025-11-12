@@ -4,11 +4,15 @@
 #include <unistd.h>
 #include <string.h>
 #include <time.h>
+#if defined(__APPLE__)
+#include "../CodeTesting/GPIO/wiringOP/wiringPi/wiringPi.h"
+#else
 #include <wiringPi.h>
 #include <softPwm.h>
 #include <tof.h>
 #include <sys/ioctl.h>
 #include <linux/i2c-dev.h>
+#endif
 #include <fcntl.h>
 
 
@@ -231,8 +235,8 @@ void turn(int direction) {
         while ((direction == DIR_RIGHT && abs(turnr)  < turncount) || (direction == DIR_LEFT && abs(turnl) < turncount)) {
             delay(500);
             if (direction == DIR_RIGHT) {
-                pwmWrite(PWM3_PIN, 0);
-                pwmWrite(PWM4_PIN, 150);
+                pwmWrite(PWM3_PIN, -400);
+                pwmWrite(PWM4_PIN, 400);
                 turnr = countrm - startr;
             }
             if (direction == DIR_LEFT) {
@@ -351,8 +355,7 @@ int main(void){
 
     //start to do "main" loop and go back/fourth and clean
     cleaning();
-    look_for_edge();
-
-//    turn(DIR_LEFT);
+    //look_for_edge();
+    turn(DIR_LEFT);
 return 0;
 }
