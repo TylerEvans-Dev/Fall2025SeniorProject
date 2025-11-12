@@ -257,7 +257,9 @@ void turn(int direction) {
     int i = 0;
     while(i < 2000000){
         pwmWrite(PWM1_PIN, PWM_MEDIUM);
-        pwmWrite(PWM2_PIN, PWM_MEDIUM);
+        pwmWrite(PWM2_PIN, 0);
+        pwmWrite(PWM3_PIN, PWM_MEDIUM);
+        pwmWrite(PWM4_PIN, 0);
         i++;
     }
     brake();
