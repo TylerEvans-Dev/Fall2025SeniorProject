@@ -34,7 +34,7 @@
 #define PWM_SLOW 250
 #define PWM_MEDIUM 500
 #define PWM_SOFT_CAP 1024
-int left_offset = 200;//change this
+int left_offset = 90;//change this
 int right_offset = 0;
 
 //sets initial direction and defines different states for forward/backward/right/left/stop
@@ -222,20 +222,19 @@ uint16_t* read_PCA_channels(int ch) {
 //TODO: this needs tuning badly
 //Turn right, flip 180, and point to next parallel path in other direction
 void turn(int direction) {
-    int turncount = 1150; // number of encoder counts to flip 180 on one wheel
+    int turncount = 1637; // number of encoder counts to flip 180 on one wheel
     int startr = countrm;
     int startl = countlm;
     int turnr = 0;
     int turnl = 0;
     //this is to make the robot drive fowards to start measuring the edge.
-    delay(500); // why do we have this addtional delay I do not see the purpose of it.
-    distance_cm(10, DIR_FORWARD, 120);
+    //delay(500); // why do we have this addtional delay I do not see the purpose of it.
+    //distance_cm(10, DIR_FORWARD, 120);
     //sets the values to be zero for turnr and turnl. so we can start counting
     turnr = 0;
     turnl = 0;
 
-    brake();
-    stop();
+    brake(); //for protection 
     while ((direction == DIR_RIGHT && abs(turnr)  < turncount) || (direction == DIR_LEFT && abs(turnl) < turncount)) {
         delay(500); // I am curious why we have this delay as well.
         if (direction == DIR_RIGHT) {
@@ -347,19 +346,36 @@ int main(void){
     printf("WiringPi setup\n");
     setupRobot();
     printf("Robot setup\n");
+	forward(1024);
+	delay(1000);
 
     //start to do "main" loop and go back/fourth and clean
-    cleaning();
-    look_for_edge();
+    //cleaning();
+    //look_for_edge();
     /*TEST ONE test to see if the vac. works and is code is complete */
     //cleaning();
     /*TEST TWO test break function goal to lock motors */
     //distance_cm(10, DIR_FORWARD, 150); //goal to travel 10 cm
-    //brake(); //test if it stops the motors
+    	//forward(1024);
+	//delay(1000);
+	//brake(); //test if it stops the motors break does woakrk
     /*TEST THREE  PID testing/ putting distance cm in its place*/
     //distance_cm(10, DIR_FORWARD, 150); //goal to travel 10 cm
     /*Test Four turn testing with new motors we have a diffrent count so we need to change it*/
-    //turn(DIR_LEFT);
+    	//while(1){
+	//encoder_r_isr();
+	//delay(10);
+	//}
+	while(1){
+	printf("i ma in the max\n");
+	turn(DIR_LEFT);
+	//distance_cm(10,DIR_FORWARD, 1024);
+	forward(1024);
+	turn(DIR_RIGHT);
+	//distance_cm(10, DIR_FORWARD, 1024);
+	forward(1024);
+	delay(10);
+	}
     /* if additional time we can start putting things in threads to enable threading features we intend. */
 return 0;
 }
