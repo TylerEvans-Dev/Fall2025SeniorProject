@@ -2,9 +2,18 @@
 #include <string.h>
 #include <unistd.h>
 #include <arpa/inet.h>
-#include "GY521.h"
-
+typedef struct{
+    float ax;
+    float ay;
+    float az;
+    float gx;
+    float gy;
+    float gz;
+    float temp;
+}DataAccel;
 int main() {
+
+
     int server_fd, client_fd;
     struct sockaddr_in addr;
     char buffer[1024];
@@ -23,10 +32,10 @@ int main() {
     printf("Client connected!\n");
 
     while (1) {
-        int n = recv(client_fd, buffer, sizeof(buffer)-1, 0);
-        if (n <= 0) break;  // disconnect or error
-        buffer[n] = 0;
-        printf("Received: %s\n", buffer);
+        //int n = recv(client_fd, buffer, sizeof(buffer)-1, 0);
+        //if (n <= 0) break;  // disconnect or error
+        //buffer[n] = 0;
+        //printf("Received: %s\n", buffer);
         DataAccel d;
         recv(client_fd, &d, sizeof(DataAccel), MSG_WAITALL);
         printf("ax=%f ay=%f az=%f\n", d.ax, d.ay, d.az);
