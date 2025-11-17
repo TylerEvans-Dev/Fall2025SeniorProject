@@ -2,6 +2,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <arpa/inet.h>
+#include "GY521.h"
 
 int main() {
     int server_fd, client_fd;
@@ -26,6 +27,9 @@ int main() {
         if (n <= 0) break;  // disconnect or error
         buffer[n] = 0;
         printf("Received: %s\n", buffer);
+        DataAccel d;
+        recv(client_fd, &d, sizeof(DataAccel), MSG_WAITALL);
+        printf("ax=%f ay=%f az=%f\n", d.ax, d.ay, d.az);
     }
 
     close(client_fd);
