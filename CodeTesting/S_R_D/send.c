@@ -12,7 +12,7 @@ int main() {
 
     server.sin_family = AF_INET;
     server.sin_port = htons(9000);
-    inet_pton(AF_INET, "10.0.0.67", &server.sin_addr);
+    inet_pton(AF_INET, "192.168.3.147", &server.sin_addr);
 
     connect(sock, (struct sockaddr *)&server, sizeof(server));
     //this is an example on how to use the accl.
