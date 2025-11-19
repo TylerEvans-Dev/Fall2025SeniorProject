@@ -32,7 +32,7 @@ int main() {
         printf("A: %.2f %.2f %.2f | G: %.2f %.2f %.2f | T: %.2f°C\n",
                        d.ax, d.ay, d.az, d.gx, d.gy, d.gz, d.temp);
 
-        send(sock, &d, sizeof(d), 0);
+        send(sock, &d, sizeof(d)*7, 0);
         usleep(100000); // 100ms between sends
     }
 
