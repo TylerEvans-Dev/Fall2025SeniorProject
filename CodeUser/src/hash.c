@@ -22,6 +22,8 @@ static unsigned int hashXY(int x, int y) {
 // This is the structure of the cell so x,y and the state along with a ptr to the next cell.
 typedef struct Cell {
     int x, y;
+    int cost;
+    int dist;
     CellState state;
     struct Cell *next;
 } Cell;
