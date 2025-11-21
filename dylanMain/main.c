@@ -10,7 +10,7 @@
 #include <sys/ioctl.h>
 #include <linux/i2c-dev.h>
 #include <fcntl.h>
-
+#include <stdbool.h>
 
 
 
@@ -32,10 +32,10 @@
 #define PWM_RANGE 1024
 #define PWM_DIV 1
 #define PWM_SLOW 250
-#define PWM_MEDIUM 500
-#define PWM_SOFT_CAP 1024
+#define PWM_MEDIUM 300
+#define PWM_SOFT_CAP 1024 - 300
 int left_offset = 200;//change this
-int right_offset = 0;
+int right_offset = 00;
 
 //sets initial direction and defines different states for forward/backward/right/left/stop
 #define DIR_STOP 0
@@ -53,8 +53,8 @@ volatile uint8_t prevrm = 0;
 const int8_t transTable[4][4] = {{0, 1, -1 , 0}, {-1, 0, 0, 1}, {1,0,0,-1}, {0,-1,1,0}}; //this is the trans. table for the encoder count.
 
 //PID weights and error global variables
-float kp = 20;
-float ki = 0;
+float kp = 1.2;
+float ki = .008;
 float kd = 0;
 int32_t errorIntegral = 0;
 int32_t prevError = 0;
@@ -71,21 +71,27 @@ int fd;
 
 
 
-//Stops all motors and has slight delay to prevent burnup
+//Stops all chasis motors and has slight delay to prevent burnup
 void stop(){
     pwmWrite(PWM1_PIN, 0);
     pwmWrite(PWM2_PIN, 0);
     pwmWrite(PWM3_PIN, 0);
     pwmWrite(PWM4_PIN, 0);
+    currentDir = DIR_STOP;
+    delay(500);
+}
+
+//Stops the brush and vacuum
+void stop_cleaning() {
     digitalWrite(BRUSHL, LOW);
     softPwmWrite(BRUSHR, 0);
     digitalWrite(VACL, LOW);
     softPwmWrite(VACR, 0);
-    currentDir = DIR_STOP;
-    delay(10);
+    delay(2000);
+    close(fd);
 }
 
-//TODO: need to verify working as expected and not nuisance
+
 //sets the PWM and DO to a HIGH state in order to "lock" motors
 void brake(){
     pwmWrite(PWM1_PIN, PWM_RANGE);
@@ -94,6 +100,14 @@ void brake(){
     pwmWrite(PWM4_PIN, PWM_RANGE);
     delay(100);
 
+}
+
+//resets encoder counts
+void reset_count() {
+    countrm = 0;
+    countlm = 0;
+    prevrm = 0;
+    prevlm = 0;
 }
 
 //TODO: needs PID tuning
@@ -140,8 +154,8 @@ void backward(int PWMval){
     prevError = error;
     float pid = kp * error + ki * errorIntegral + kd * derivative;
     int correction = (int)pid;
-    int leftPWM = PWMval - correction - right_offset;
-    int rightPWM = PWMval + correction - left_offset;
+    int leftPWM = PWMval + correction - left_offset;
+    int rightPWM = PWMval - correction - right_offset;
     if (leftPWM < PWM_SLOW) leftPWM = PWM_SLOW;
     if (leftPWM > PWM_SOFT_CAP) leftPWM = PWM_SOFT_CAP;
     if (rightPWM < PWM_SLOW) rightPWM = PWM_SLOW;
@@ -161,7 +175,7 @@ void distance_cm(int cm, int direction, int speed) {
     int countldist = 0;
     int countrcm = 0;
     int countlcm = 0;
-    int ratio = 38;
+    int ratio = 60;
     while (abs(countrcm) < cm && abs(countlcm) < cm) {
         countrdist = countrm - startr;
         countldist = countlm - startl;
@@ -178,7 +192,7 @@ void distance_cm(int cm, int direction, int speed) {
             }
         }
         else {
-            printf("Invalid speed (negative speed)\n");
+            printf("Invalid direction\n");
         }
     }
     brake();
@@ -220,21 +234,21 @@ int read_PCA_channels(int ch) {
 }
 
 void square(int direction) {
-    int left = read_PCA_channels(0);
-    int right = read_PCA_channels(1);
+    int left = 0;
+    int right = 0;
     int redge = 0;
     int ledge = 0;
     while(redge != 1 || ledge != 1) {
         if(direction == DIR_FORWARD) {
             if (left < 200) {
-                pwmWrite(PWM1_PIN, PWM_SLOW);
+                pwmWrite(PWM1_PIN, PWM_SLOW + 70);
                 pwmWrite(PWM2_PIN, 0);
                 left = read_PCA_channels(0);
             }
             else {
                 ledge = 1;
-                pwmWrite(PWM1_PIN, PWM_SLOW);
-                pwmWrite(PWM2_PIN, PWM_SLOW);
+                pwmWrite(PWM1_PIN, PWM_RANGE);
+                pwmWrite(PWM2_PIN, PWM_RANGE);
                 delay(50);
                 pwmWrite(PWM1_PIN, 0);
                 pwmWrite(PWM2_PIN, 0);
@@ -247,8 +261,8 @@ void square(int direction) {
             }
             else {
                 redge = 1;
-                pwmWrite(PWM3_PIN, PWM_SLOW);
-                pwmWrite(PWM4_PIN, PWM_SLOW);
+                pwmWrite(PWM3_PIN, PWM_RANGE);
+                pwmWrite(PWM4_PIN, PWM_RANGE);
                 delay(50);
                 pwmWrite(PWM3_PIN, 0);
                 pwmWrite(PWM4_PIN, 0);
@@ -259,64 +273,64 @@ void square(int direction) {
         if (direction == DIR_BACKWARD) {
             if (left < 200) {
                 pwmWrite(PWM1_PIN, 0);
-                pwmWrite(PWM2_PIN, PWM_SLOW + 150);
+                pwmWrite(PWM2_PIN, PWM_SLOW + 70);
                 left = read_PCA_channels(2);
             }
             else {
                 ledge = 1;
-                pwmWrite(PWM1_PIN, PWM_SOFT_CAP);
-                pwmWrite(PWM2_PIN, PWM_SOFT_CAP);
+                pwmWrite(PWM1_PIN, PWM_RANGE);
+                pwmWrite(PWM2_PIN, PWM_RANGE);
             }
 
             if (right < 200) {
                 pwmWrite(PWM3_PIN, 0);
-                pwmWrite(PWM4_PIN, PWM_SLOW - 100);
+                pwmWrite(PWM4_PIN, PWM_SLOW);
                 right = read_PCA_channels(3);
             }
             else {
                 redge = 1;
-                pwmWrite(PWM3_PIN, PWM_SOFT_CAP);
-                pwmWrite(PWM4_PIN, PWM_SOFT_CAP);
+                pwmWrite(PWM3_PIN, PWM_RANGE);
+                pwmWrite(PWM4_PIN, PWM_RANGE);
             }
         }
     }
     delay(200);
     stop();
+    reset_count();
 }
 
 //TODO: this needs tuning badly
 //Turn right, flip 180, and point to next parallel path in other direction
 void turn(int direction) {
-    int turncount = 1150; // number of encoder counts to flip 180 on one wheel
+    int turncount = 1600; // number of encoder counts to flip 180 on one wheel
     int startr = countrm;
     int startl = countlm;
     int turnr = 0;
     int turnl = 0;
-    for (int i = 0; i < 2; i++) {
-        while ((direction == DIR_RIGHT && abs(turnr)  < turncount) || (direction == DIR_LEFT && abs(turnl) < turncount)) {
-            delay(500);
-            if (direction == DIR_RIGHT) {
-                pwmWrite(PWM3_PIN, 0);
-                pwmWrite(PWM4_PIN, 150);
-                turnr = countrm - startr;
-            }
-            if (direction == DIR_LEFT) {
-                pwmWrite (PWM1_PIN, 0);
-                pwmWrite (PWM2_PIN, 120);
-                turnl = countlm - startl;
-            }
+    while ((direction == DIR_RIGHT && abs(turnr)  < turncount) || (direction == DIR_LEFT && abs(turnl) < turncount)) {
+        if (direction == DIR_RIGHT) {
+            pwmWrite(PWM3_PIN, 0);
+            pwmWrite(PWM4_PIN, PWM_MEDIUM + 100);
+            turnr = countrm - startr;
         }
-        brake();
-        stop();
-        if (i == 0) {
-            delay(500);
-            distance_cm(10, DIR_FORWARD, 120);
-            turnr = 0;
-            turnl = 0;
+        if (direction == DIR_LEFT) {
+            pwmWrite (PWM1_PIN, 0);
+            pwmWrite (PWM2_PIN, PWM_MEDIUM + 100);
+            turnl = countlm - startl;
         }
     }
     brake();
     stop();
+    reset_count();
+}
+
+void next_row(int direction) {
+    turn(direction);
+    distance_cm(30, DIR_FORWARD, PWM_SLOW);
+    turn(direction);
+    square(DIR_BACKWARD);
+    distance_cm(10, DIR_FORWARD, PWM_SLOW);
+    square(DIR_BACKWARD);
 }
 
 //TODO: verify this isnt causing delay
@@ -324,23 +338,21 @@ void turn(int direction) {
 //200 take a verification measurment and stop
 void look_for_edge(void){
     while(1) {
-        uint16_t  tofDistances[2];
-        tofDistances[0] = (uint16_t)read_PCA_channels(0);
-        tofDistances[1] = (uint16_t)read_PCA_channels(1);
-        if (tofDistances[0] > 200) {
-            delay(50);
-            tofDistances[0] = (uint16_t)read_PCA_channels(0);
-            if (tofDistances[0] > 200) {
+        int tofDistance = 0;
+        tofDistance = read_PCA_channels(0);
+        if (tofDistance > 200) {
+            tofDistance = read_PCA_channels(1);
+            if (tofDistance > 200) {
                 brake();
                 stop();
                 break;
             }
         }
-        forward(PWM_MEDIUM);
+        forward(PWM_SLOW);
     }
-    delay(25);
-    distance_cm(10, DIR_BACKWARD, PWM_MEDIUM);
-    close(fd);
+    distance_cm(10, DIR_BACKWARD, PWM_SLOW);
+    square(DIR_FORWARD);
+    distance_cm(10, DIR_BACKWARD, PWM_SLOW);
 }
 
 //TODO: verify that this is working with both vacuum and brush
@@ -417,15 +429,32 @@ int main(void){
     printf("Robot setup\n");
 
     //start to do "main" loop and go back/fourth and clean
-    square(DIR_BACKWARD);
-//    cleaning();
-//    delay(20000);
-//    stop();
-//    look_for_edge();
-//    turn(DIR_RIGHT);
-//for(int i = 0; i<4; i++ ) {
-//read_PCA_channels(i);
-//}
-//    turn(DIR_LEFT);
+/*    bool not_done = true;
+    uint16_t distances[4];
+    int count = 0;
+    while(not_done) {
+        cleaning();
+        look_for_edge();
+        turn(DIR_RIGHT);
+        square(DIR_BACKWARD);
+        delay(5000);
+        for(int i = 0; i<4; i++) {
+            distances[i] = read_PCA_channels(i);
+            if(distances[i] > 200) count++;
+        }
+        if(count == 4) break;
+        else count = 0;
+    } */
+    for(int i = 0; i < 3; i++) {
+    cleaning();
+    look_for_edge();
+    next_row(DIR_RIGHT);
+    look_for_edge();
+    next_row(DIR_LEFT);
+    }
+    stop_cleaning();
+/*    for(int i = 0; i<4; i++ ) {
+        read_PCA_channels(i);
+    } */
 return 0;
 }
