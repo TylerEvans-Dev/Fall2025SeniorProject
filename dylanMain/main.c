@@ -206,8 +206,7 @@ void encoder_l_isr(void){
 }
 
 //Reads the encoder values of PCA I2C channels returns as array
-uint16_t* read_PCA_channels(int ch) {
-    static uint16_t distances[8];
+int read_PCA_channels(int ch) {
     ioctl(fd, I2C_SLAVE, TCA_ADDR);
     uint8_t config = 1 << ch;
     write(fd, &config, 1);
@@ -215,8 +214,74 @@ uint16_t* read_PCA_channels(int ch) {
     if (multi < 8) {
         tofInit(4, TOF_ADDR, 1);
     }
-    distances[ch] = tofReadDistance();
-    return distances;
+    int distance = tofReadDistance();
+//    printf("The tof distance is %d\n", distance);
+    return distance;
+}
+
+void square(int direction) {
+    int left = read_PCA_channels(0);
+    int right = read_PCA_channels(1);
+    int redge = 0;
+    int ledge = 0;
+    while(redge != 1 || ledge != 1) {
+        if(direction == DIR_FORWARD) {
+            if (left < 200) {
+                pwmWrite(PWM1_PIN, PWM_SLOW);
+                pwmWrite(PWM2_PIN, 0);
+                left = read_PCA_channels(0);
+            }
+            else {
+                ledge = 1;
+                pwmWrite(PWM1_PIN, PWM_SLOW);
+                pwmWrite(PWM2_PIN, PWM_SLOW);
+                delay(50);
+                pwmWrite(PWM1_PIN, 0);
+                pwmWrite(PWM2_PIN, 0);
+            }
+
+            if (right < 200) {
+                pwmWrite(PWM3_PIN, PWM_SLOW);
+                pwmWrite(PWM4_PIN, 0);
+                right = read_PCA_channels(1);
+            }
+            else {
+                redge = 1;
+                pwmWrite(PWM3_PIN, PWM_SLOW);
+                pwmWrite(PWM4_PIN, PWM_SLOW);
+                delay(50);
+                pwmWrite(PWM3_PIN, 0);
+                pwmWrite(PWM4_PIN, 0);
+            }
+        }
+
+
+        if (direction == DIR_BACKWARD) {
+            if (left < 200) {
+                pwmWrite(PWM1_PIN, 0);
+                pwmWrite(PWM2_PIN, PWM_SLOW + 150);
+                left = read_PCA_channels(2);
+            }
+            else {
+                ledge = 1;
+                pwmWrite(PWM1_PIN, PWM_SOFT_CAP);
+                pwmWrite(PWM2_PIN, PWM_SOFT_CAP);
+            }
+
+            if (right < 200) {
+                pwmWrite(PWM3_PIN, 0);
+                pwmWrite(PWM4_PIN, PWM_SLOW - 100);
+                right = read_PCA_channels(3);
+            }
+            else {
+                redge = 1;
+                pwmWrite(PWM3_PIN, PWM_SOFT_CAP);
+                pwmWrite(PWM4_PIN, PWM_SOFT_CAP);
+            }
+        }
+    }
+    delay(200);
+    stop();
 }
 
 //TODO: this needs tuning badly
@@ -259,10 +324,12 @@ void turn(int direction) {
 //200 take a verification measurment and stop
 void look_for_edge(void){
     while(1) {
-        uint16_t  *tofDistances =  read_PCA_channels(0);
+        uint16_t  tofDistances[2];
+        tofDistances[0] = (uint16_t)read_PCA_channels(0);
+        tofDistances[1] = (uint16_t)read_PCA_channels(1);
         if (tofDistances[0] > 200) {
             delay(50);
-            tofDistances = read_PCA_channels(0);
+            tofDistances[0] = (uint16_t)read_PCA_channels(0);
             if (tofDistances[0] > 200) {
                 brake();
                 stop();
@@ -279,9 +346,9 @@ void look_for_edge(void){
 //TODO: verify that this is working with both vacuum and brush
 void cleaning(){
     digitalWrite(BRUSHL, LOW); //soft pwm direction
-    softPwmWrite(BRUSHR, 30); //soft pwm duty cycle %
+    softPwmWrite(BRUSHR, 40); //soft pwm duty cycle %
     digitalWrite(VACL, LOW); //soft pwm direction
-    softPwmWrite(VACR, 60); //soft pwm duty cycle %
+    softPwmWrite(VACR, 100); //soft pwm duty cycle %
 }
 
 //Sets the pins used for PWM to PWM_OUTPUT mode and establishes the
@@ -350,9 +417,15 @@ int main(void){
     printf("Robot setup\n");
 
     //start to do "main" loop and go back/fourth and clean
-    cleaning();
-    look_for_edge();
-
+    square(DIR_BACKWARD);
+//    cleaning();
+//    delay(20000);
+//    stop();
+//    look_for_edge();
+//    turn(DIR_RIGHT);
+//for(int i = 0; i<4; i++ ) {
+//read_PCA_channels(i);
+//}
 //    turn(DIR_LEFT);
 return 0;
 }
