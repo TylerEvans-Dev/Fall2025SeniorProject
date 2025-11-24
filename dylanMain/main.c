@@ -44,6 +44,10 @@ int currentDir = DIR_STOP;
 #define DIR_BACKWARD -1
 #define DIR_RIGHT 2
 #define DIR_LEFT 3
+int edge_distance = 150;
+bool on_edge = false;
+bool turning = false;
+bool startup = false;
 
 //Global encoder variables for counting encoder changes
 volatile int32_t countlm = 0;
@@ -53,7 +57,7 @@ volatile uint8_t prevrm = 0;
 const int8_t transTable[4][4] = {{0, 1, -1 , 0}, {-1, 0, 0, 1}, {1,0,0,-1}, {0,-1,1,0}}; //this is the trans. table for the encoder count.
 
 //PID weights and error global variables
-float kp = 1.2;
+float kp = 1.5;
 float ki = .008;
 float kd = 0;
 int32_t errorIntegral = 0;
@@ -166,7 +170,20 @@ void backward(int PWMval){
     pwmWrite(PWM4_PIN, leftPWM);
 }
 
-//TODO: needs tuning after robot/motor changes
+//Reads the encoder values of PCA I2C channels returns as int
+int read_PCA_channels(int ch) {
+    ioctl(fd, I2C_SLAVE, TCA_ADDR);
+    uint8_t config = 1 << ch;
+    write(fd, &config, 1);
+    ioctl(fd, I2C_SLAVE, TOF_ADDR);
+    if (multi < 8) {
+        tofInit(4, TOF_ADDR, 1);
+    }
+    int distance = tofReadDistance();
+//    printf("The tof distance is %d\n", distance);
+    return distance;
+}
+
 //Go specified distance in mm and given direction DIR_FOR/DIR_REV and start speed
 void distance_cm(int cm, int direction, int speed) {
     int startr = countrm;
@@ -176,7 +193,17 @@ void distance_cm(int cm, int direction, int speed) {
     int countrcm = 0;
     int countlcm = 0;
     int ratio = 60;
+    int leftsense = read_PCA_channels(0);
+    int rightsense = read_PCA_channels(1);
     while (abs(countrcm) < cm && abs(countlcm) < cm) {
+        leftsense = read_PCA_channels(0);
+        rightsense = read_PCA_channels(1);
+        if((leftsense > edge_distance || rightsense > edge_distance) && turning) {
+            brake();
+            stop();
+            on_edge = true;
+            return;
+        }
         countrdist = countrm - startr;
         countldist = countlm - startl;
         countrcm = countrdist / ratio;
@@ -219,20 +246,7 @@ void encoder_l_isr(void){
 //    printf("The l value is %i \n", countlm);
 }
 
-//Reads the encoder values of PCA I2C channels returns as array
-int read_PCA_channels(int ch) {
-    ioctl(fd, I2C_SLAVE, TCA_ADDR);
-    uint8_t config = 1 << ch;
-    write(fd, &config, 1);
-    ioctl(fd, I2C_SLAVE, TOF_ADDR);
-    if (multi < 8) {
-        tofInit(4, TOF_ADDR, 1);
-    }
-    int distance = tofReadDistance();
-//    printf("The tof distance is %d\n", distance);
-    return distance;
-}
-
+//Squares the robot with an edge to prep for next pass
 void square(int direction) {
     int left = 0;
     int right = 0;
@@ -240,7 +254,7 @@ void square(int direction) {
     int ledge = 0;
     while(redge != 1 || ledge != 1) {
         if(direction == DIR_FORWARD) {
-            if (left < 200) {
+            if (left < edge_distance) {
                 pwmWrite(PWM1_PIN, PWM_SLOW + 70);
                 pwmWrite(PWM2_PIN, 0);
                 left = read_PCA_channels(0);
@@ -254,7 +268,7 @@ void square(int direction) {
                 pwmWrite(PWM2_PIN, 0);
             }
 
-            if (right < 200) {
+            if (right < edge_distance) {
                 pwmWrite(PWM3_PIN, PWM_SLOW);
                 pwmWrite(PWM4_PIN, 0);
                 right = read_PCA_channels(1);
@@ -271,7 +285,7 @@ void square(int direction) {
 
 
         if (direction == DIR_BACKWARD) {
-            if (left < 200) {
+            if (left < edge_distance) {
                 pwmWrite(PWM1_PIN, 0);
                 pwmWrite(PWM2_PIN, PWM_SLOW + 70);
                 left = read_PCA_channels(2);
@@ -282,7 +296,7 @@ void square(int direction) {
                 pwmWrite(PWM2_PIN, PWM_RANGE);
             }
 
-            if (right < 200) {
+            if (right < edge_distance) {
                 pwmWrite(PWM3_PIN, 0);
                 pwmWrite(PWM4_PIN, PWM_SLOW);
                 right = read_PCA_channels(3);
@@ -299,8 +313,7 @@ void square(int direction) {
     reset_count();
 }
 
-//TODO: this needs tuning badly
-//Turn right, flip 180, and point to next parallel path in other direction
+//Turn 90 deg right or left
 void turn(int direction) {
     int turncount = 1600; // number of encoder counts to flip 180 on one wheel
     int startr = countrm;
@@ -324,25 +337,37 @@ void turn(int direction) {
     reset_count();
 }
 
-void next_row(int direction) {
-    turn(direction);
-    distance_cm(30, DIR_FORWARD, PWM_SLOW);
-    turn(direction);
-    square(DIR_BACKWARD);
-    distance_cm(10, DIR_FORWARD, PWM_SLOW);
-    square(DIR_BACKWARD);
-}
-
-//TODO: verify this isnt causing delay
 //read sensors and go forward until it reads greater than
-//200 take a verification measurment and stop
+//edge_distance(distance from sensor to ground) compare to other side and stop and stop
+//if one side goes over edge adjust motors to correct
 void look_for_edge(void){
     while(1) {
-        int tofDistance = 0;
-        tofDistance = read_PCA_channels(0);
-        if (tofDistance > 200) {
-            tofDistance = read_PCA_channels(1);
-            if (tofDistance > 200) {
+        int tofl = 0;
+        int tofr = 0;
+        tofl = read_PCA_channels(0);
+        tofr = read_PCA_channels(1);
+        if(tofr > edge_distance && !(tofl > edge_distance)) {
+            delay(10);
+            tofr = read_PCA_channels(1);
+            if(tofr > edge_distance) {
+                pwmWrite(PWM1_PIN, 0);
+                pwmWrite(PWM2_PIN, PWM_MEDIUM);
+                reset_count();
+                delay(10);
+            }
+        }
+        if(tofl > edge_distance && !(tofr > edge_distance)) {
+            delay(10);
+            tofl = read_PCA_channels(0);
+            if(tofl > edge_distance) {
+                pwmWrite(PWM3_PIN, 0);
+                pwmWrite(PWM4_PIN, PWM_MEDIUM);
+                reset_count();
+                delay(10);
+            }
+        }
+        if (tofr > edge_distance) {
+            if (tofl > edge_distance) {
                 brake();
                 stop();
                 break;
@@ -352,10 +377,27 @@ void look_for_edge(void){
     }
     distance_cm(10, DIR_BACKWARD, PWM_SLOW);
     square(DIR_FORWARD);
-    distance_cm(10, DIR_BACKWARD, PWM_SLOW);
+    if(!startup) {
+        distance_cm(10, DIR_BACKWARD, PWM_SLOW);
+    }
+    else {
+        distance_cm(2, DIR_FORWARD, PWM_SLOW);
+    }
 }
 
-//TODO: verify that this is working with both vacuum and brush
+//Turn in direction and move over to next row
+void next_row(int direction) {
+    turn(direction);
+    turning = true;
+    distance_cm(30, DIR_FORWARD, PWM_SLOW);
+    turn(direction);
+    square(DIR_BACKWARD);
+    turning = false;
+    distance_cm(10, DIR_FORWARD, PWM_SLOW);
+    square(DIR_BACKWARD);
+}
+
+//this starts the vacuum and brush for cleaning
 void cleaning(){
     digitalWrite(BRUSHL, LOW); //soft pwm direction
     softPwmWrite(BRUSHR, 40); //soft pwm duty cycle %
@@ -363,6 +405,16 @@ void cleaning(){
     softPwmWrite(VACR, 100); //soft pwm duty cycle %
 }
 
+//robot finds an edge and squares with edge to determine starting position.
+void start_position() {
+    startup = true;
+    look_for_edge();
+    turn(DIR_RIGHT);
+    look_for_edge();
+    turn(DIR_RIGHT);
+    square(DIR_BACKWARD);
+    startup = false;
+}
 //Sets the pins used for PWM to PWM_OUTPUT mode and establishes the
 //max duty cydle & clock speed for PWM.
 void setupRobot(){
@@ -429,29 +481,27 @@ int main(void){
     printf("Robot setup\n");
 
     //start to do "main" loop and go back/fourth and clean
-/*    bool not_done = true;
-    uint16_t distances[4];
-    int count = 0;
-    while(not_done) {
-        cleaning();
-        look_for_edge();
-        turn(DIR_RIGHT);
-        square(DIR_BACKWARD);
-        delay(5000);
-        for(int i = 0; i<4; i++) {
-            distances[i] = read_PCA_channels(i);
-            if(distances[i] > 200) count++;
-        }
-        if(count == 4) break;
-        else count = 0;
-    } */
-    for(int i = 0; i < 3; i++) {
     cleaning();
-    look_for_edge();
-    next_row(DIR_RIGHT);
-    look_for_edge();
-    next_row(DIR_LEFT);
+    start_position();
+    while(!on_edge) {
+        look_for_edge();
+        next_row(DIR_RIGHT);
+        look_for_edge();
+        next_row(DIR_LEFT);
     }
+    startup = true;
+    look_for_edge();
+    startup = false;
+    turn(DIR_RIGHT);
+    on_edge = false;
+    delay(100);
+    while(!on_edge) {
+        look_for_edge();
+        next_row(DIR_RIGHT);
+        look_for_edge();
+        next_row(DIR_LEFT);
+    }
+    look_for_edge();
     stop_cleaning();
 /*    for(int i = 0; i<4; i++ ) {
         read_PCA_channels(i);
