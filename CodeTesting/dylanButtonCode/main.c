@@ -125,8 +125,8 @@ void setupButton(){
     pinMode(BUTTON_STOP_HIGH, OUTPUT);
     //setting this high for read
     digitalWrite(BUTTON_STOP_HIGH, HIGH);
-    wiringPiISR(BUTTON_STOP_READ,INT_EDGE_BOTH, &readStop);
-    wiringPiISR(BUTTON_START_READ, INT_EDGE_BOTH, &readStart);
+    wiringPiISR(BUTTON_STOP_READ,INT_EDGE_RISING, &readStop);
+    wiringPiISR(BUTTON_START_READ, INT_EDGE_RISING, &readStart);
 }
 
 //Stops the brush and vacuum
