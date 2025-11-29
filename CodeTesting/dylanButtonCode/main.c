@@ -38,11 +38,11 @@
 // The reason for the high is for logic high voltage
 // to give the logic voltage so when the button is pushed
 // you can use this
-#define BUTTON_START_READ  16//pin 22 physical
-#define BUTTON_START_HIGH  15//pin 24 physical
+#define BUTTON_START_READ  19 //pin 29 physical
+#define BUTTON_START_HIGH  7 //pin 13  physical
 
-#define BUTTON_STOP_READ 12//pin 21 physical
-#define BUTTON_STOP_HIGH 14//pin 23 physical
+#define BUTTON_STOP_READ 10 //pin 18 physical
+#define BUTTON_STOP_HIGH 8 //pin 15 physical
 
 //Define duty cycle and clock speed for freq of PWM and direction
 #define PWM_RANGE 1024
@@ -100,12 +100,14 @@ void stop(){
 }
 
 void readStop(void){
+    printf("reading stop button\n");
     if(digitalRead(BUTTON_STOP_READ) == 1){
         stop();
     }
 }
 
 void readStart(void){
+    printf("reading start button\n");
     if(digitalRead(BUTTON_START_READ) == 1){
         stop();
     }
@@ -503,11 +505,11 @@ void setupRobot(){
     wiringPiISR(P38, INT_EDGE_BOTH, &encoder_r_isr);
 
     //initialize multiplexer for tof sensors
-    fd = open(I2C_BUS, O_RDWR);
-    for (int ch=0; ch <8; ch++) {
-        read_PCA_channels(ch);
-        multi++;
-    }
+    //fd = open(I2C_BUS, O_RDWR);
+    //for (int ch=0; ch <8; ch++) {
+      //  read_PCA_channels(ch);
+     //   multi++;
+    //}
 }
 
 
@@ -552,9 +554,11 @@ int main(){
     setupRobot();
     printf("Robot setup\n");
     setupButton();
+    printf("button setup\n");
     while (1) {
-        readStart();
-        readStop();
+	printf("in main loop\n");
+        //readStart();
+        //readStop();
         usleep(1000);
     }
 }
