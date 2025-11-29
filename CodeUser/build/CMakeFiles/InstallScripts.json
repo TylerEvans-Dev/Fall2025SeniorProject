@@ -1,0 +1,11 @@
+{
+	"InstallScripts" : 
+	[
+		"/Users/tyler/Documents/fall2025/ECE4910/SeniorProject/CodeUser/build/cmake_install.cmake",
+		"/Users/tyler/Documents/fall2025/ECE4910/SeniorProject/CodeUser/build/lib/raylib/cmake_install.cmake",
+		"/Users/tyler/Documents/fall2025/ECE4910/SeniorProject/CodeUser/build/lib/raylib/raylib/cmake_install.cmake",
+		"/Users/tyler/Documents/fall2025/ECE4910/SeniorProject/CodeUser/build/lib/raylib/raylib/external/glfw/cmake_install.cmake",
+		"/Users/tyler/Documents/fall2025/ECE4910/SeniorProject/CodeUser/build/lib/raylib/raylib/external/glfw/src/cmake_install.cmake"
+	],
+	"Parallel" : false
+}

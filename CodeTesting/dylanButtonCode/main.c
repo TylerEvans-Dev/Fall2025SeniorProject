@@ -38,7 +38,7 @@
 // The reason for the high is for logic high voltage
 // to give the logic voltage so when the button is pushed
 // you can use this
-#define BUTTON_START_READ  13//pin 22 physical
+#define BUTTON_START_READ  16//pin 22 physical
 #define BUTTON_START_HIGH  15//pin 24 physical
 
 #define BUTTON_STOP_READ 12//pin 21 physical
@@ -99,13 +99,13 @@ void stop(){
     delay(500);
 }
 
-void readStop(){
+void readStop(void){
     if(digitalRead(BUTTON_STOP_READ) == 1){
         stop();
     }
 }
 
-void readStart(){
+void readStart(void){
     if(digitalRead(BUTTON_START_READ) == 1){
         stop();
     }
@@ -123,8 +123,8 @@ void setupButton(){
     pinMode(BUTTON_STOP_HIGH, OUTPUT);
     //setting this high for read
     digitalWrite(BUTTON_STOP_HIGH, HIGH);
-    wiringPiISR(BUTTON_STOP_READ,INT_EDGE_BOTH, &readStart);
-    wiringPiISR(BUTTON_START_READ, INT_EDGE_BOTH, &readStop);
+    wiringPiISR(BUTTON_STOP_READ,INT_EDGE_BOTH, &readStop);
+    wiringPiISR(BUTTON_START_READ, INT_EDGE_BOTH, &readStart);
 }
 
 //Stops the brush and vacuum
@@ -553,6 +553,8 @@ int main(){
     printf("Robot setup\n");
     setupButton();
     while (1) {
+        readStart();
+        readStop();
         usleep(1000);
     }
 }
