@@ -44,6 +44,8 @@
 #define BUTTON_STOP_READ 10 //pin 18 physical
 #define BUTTON_STOP_HIGH 8 //pin 15 physical
 
+int shouldloop = 0; //off by default.
+
 //Define duty cycle and clock speed for freq of PWM and direction
 #define PWM_RANGE 1024
 #define PWM_DIV 1
@@ -52,6 +54,7 @@
 #define PWM_SOFT_CAP 1024 - 300
 int left_offset = 200;//change this
 int right_offset = 00;
+
 
 //sets initial direction and defines different states for forward/backward/right/left/stop
 #define DIR_STOP 0
@@ -100,17 +103,13 @@ void stop(){
 }
 
 void readStop(void){
-    printf("reading stop button\n");
-    if(digitalRead(BUTTON_STOP_READ) == 1){
-        stop();
-    }
+    shouldloop = 0; //turns loop off
+    printf("reading stop button shouldloop == %i\n", shouldloop);
 }
 
 void readStart(void){
-    printf("reading start button\n");
-    if(digitalRead(BUTTON_START_READ) == 1){
-        stop();
-    }
+    shouldloop =1; //turns loop on.
+    printf("reading start button shouldloop == %i\n", shouldloop); //for debug statement
 }
 
 void setupButton(){
@@ -505,11 +504,11 @@ void setupRobot(){
     wiringPiISR(P38, INT_EDGE_BOTH, &encoder_r_isr);
 
     //initialize multiplexer for tof sensors
-    //fd = open(I2C_BUS, O_RDWR);
-    //for (int ch=0; ch <8; ch++) {
-      //  read_PCA_channels(ch);
-     //   multi++;
-    //}
+    fd = open(I2C_BUS, O_RDWR);
+    for (int ch=0; ch <8; ch++) {
+        read_PCA_channels(ch);
+        multi++;
+    }
 }
 
 
@@ -517,10 +516,11 @@ void setupRobot(){
 
 
 //main function
-void start(void){
+int main(void){
     //initializing pins and setup for robot
 
     //start to do "main" loop and go back/fourth and clean
+    while(shouldloop == 1){
     cleaning();
     start_position();
     while(!on_edge) {
@@ -542,23 +542,14 @@ void start(void){
         next_row(DIR_LEFT);
     }
     look_for_edge();
+    loopend:
     stop_cleaning();
+    }
+    while(shouldloop == 0){
+        printf("idle\n");
+        usleep(100);
+    }
 /*    for(int i = 0; i<4; i++ ) {
         read_PCA_channels(i);
     } */
-}
-
-int main(){
-    wiringPiSetup();
-    printf("WiringPi setup\n");
-    setupRobot();
-    printf("Robot setup\n");
-    setupButton();
-    printf("button setup\n");
-    while (1) {
-	printf("in main loop\n");
-        //readStart();
-        //readStop();
-        usleep(1000);
-    }
 }
