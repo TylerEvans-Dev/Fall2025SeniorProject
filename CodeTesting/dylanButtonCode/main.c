@@ -553,4 +553,5 @@ int main(void){
         printf("idle\n");
         usleep(100);
     }
+    }
 }
