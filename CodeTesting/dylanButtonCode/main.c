@@ -185,7 +185,10 @@ void stop_again(){
     pwmWrite(PWM4_PIN, 0); // Left REV
 
     currentDir = DIR_STOP;
-
+    digitalWrite(BRUSHL, LOW);
+    softPwmWrite(BRUSHR, 0);
+    digitalWrite(VACL, LOW);
+    softPwmWrite(VACR, 0);
     // A slight delay is still good practice to ensure the driver settles
     delay(50);
 }
