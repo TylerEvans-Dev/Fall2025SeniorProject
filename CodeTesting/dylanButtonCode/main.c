@@ -110,6 +110,17 @@ void stop(){
     currentDir = DIR_STOP;
     delay(50); // Short post-stop delay
 }
+void stop_all() {
+    pwmWrite(PWM1_PIN, 0);
+    pwmWrite(PWM2_PIN, 0);
+    pwmWrite(PWM3_PIN, 0);
+    pwmWrite(PWM4_PIN, 0);
+    digitalWrite(BRUSHL, LOW);
+    softPwmWrite(BRUSHR, 0);
+    digitalWrite(VACL, LOW);
+    softPwmWrite(VACR, 0);
+    delay(10);
+}
 
 // Replaced with immediate brake in stop() for responsiveness
 /*
@@ -643,8 +654,9 @@ int main(void){
             shouldloop = 0;
         }
         while(shouldloop == 0){
-            stop(); // Ensure chassis motors are braked/stopped
-            stop_cleaning(); // Ensure brush/vac are stopped
+            //stop(); // Ensure chassis motors are braked/stopped
+            //stop_cleaning(); // Ensure brush/vac are stopped
+            stop_all();
             printf("idle\n");
             usleep(100000); // 100ms delay, more robust than 100us
         }
