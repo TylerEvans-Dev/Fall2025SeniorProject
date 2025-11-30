@@ -105,6 +105,7 @@ void stop(){
 void readStop(void){
     shouldloop = 0; //turns loop off
     printf("reading stop button shouldloop == %i\n", shouldloop);
+    stop();
 }
 
 void readStart(void){
