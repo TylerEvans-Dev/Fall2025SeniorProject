@@ -174,6 +174,21 @@ void stop_cleaning() {
     // CRITICAL: Do not close I2C file descriptor here. It is needed later.
     // close(fd);
 }
+oid stop_again(){
+    // Soft Coast Stop - This eliminates the hard dynamic brake that causes clicking.
+    // Setting all PWMs to 0 immediately stops power, allowing the motors to coast
+    // to a stop without the sudden, loud short-circuit lock.
+
+    pwmWrite(PWM1_PIN, 0); // Right FWD
+    pwmWrite(PWM2_PIN, 0); // Right REV
+    pwmWrite(PWM3_PIN, 0); // Left FWD
+    pwmWrite(PWM4_PIN, 0); // Left REV
+
+    currentDir = DIR_STOP;
+
+    // A slight delay is still good practice to ensure the driver settles
+    delay(50);
+}
 
 
 
@@ -656,7 +671,8 @@ int main(void){
         while(shouldloop == 0){
             //stop(); // Ensure chassis motors are braked/stopped
             //stop_cleaning(); // Ensure brush/vac are stopped
-            stop_all();
+            //stop_all();
+            stop_again();
             printf("idle\n");
             usleep(100000); // 100ms delay, more robust than 100us
         }
