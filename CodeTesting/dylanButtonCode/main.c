@@ -101,6 +101,15 @@ void stop(){
     currentDir = DIR_STOP;
     delay(500);
 }
+//sets the PWM and DO to a HIGH state in order to "lock" motors
+void brake(){
+    pwmWrite(PWM1_PIN, PWM_RANGE);
+    pwmWrite(PWM2_PIN, PWM_RANGE);
+    pwmWrite(PWM3_PIN, PWM_RANGE);
+    pwmWrite(PWM4_PIN, PWM_RANGE);
+    delay(100);
+
+}
 
 void readStop(void){
     shouldloop = 0; //turns loop off
@@ -110,6 +119,11 @@ void readStop(void){
     softPwmWrite(BRUSHR, 0); //soft pwm duty cycle %
     digitalWrite(VACL, LOW); //soft pwm direction
     softPwmWrite(VACR, 0); //soft pwm duty cycle %
+    pwmWrite(PWM1_PIN, PWM_RANGE);
+    pwmWrite(PWM2_PIN, PWM_RANGE);
+    pwmWrite(PWM3_PIN, PWM_RANGE);
+    pwmWrite(PWM4_PIN, PWM_RANGE);
+    delay(100);
 }
 
 void readStart(void){
@@ -148,15 +162,7 @@ void stop_cleaning() {
 }
 
 
-//sets the PWM and DO to a HIGH state in order to "lock" motors
-void brake(){
-    pwmWrite(PWM1_PIN, PWM_RANGE);
-    pwmWrite(PWM2_PIN, PWM_RANGE);
-    pwmWrite(PWM3_PIN, PWM_RANGE);
-    pwmWrite(PWM4_PIN, PWM_RANGE);
-    delay(100);
 
-}
 
 //resets encoder counts
 void reset_count() {
