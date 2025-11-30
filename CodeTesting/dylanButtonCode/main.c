@@ -106,11 +106,19 @@ void readStop(void){
     shouldloop = 0; //turns loop off
     printf("reading stop button shouldloop == %i\n", shouldloop);
     stop();
+    digitalWrite(BRUSHL, LOW); //soft pwm direction
+    softPwmWrite(BRUSHR, 0); //soft pwm duty cycle %
+    digitalWrite(VACL, LOW); //soft pwm direction
+    softPwmWrite(VACR, 0); //soft pwm duty cycle %
 }
 
 void readStart(void){
     shouldloop =1; //turns loop on.
     printf("reading start button shouldloop == %i\n", shouldloop); //for debug statement
+    digitalWrite(BRUSHL, LOW); //soft pwm direction
+    softPwmWrite(BRUSHR, 40); //soft pwm duty cycle %
+    digitalWrite(VACL, LOW); //soft pwm direction
+    softPwmWrite(VACR, 100); //soft pwm duty cycle %
 }
 
 void setupButton(){
