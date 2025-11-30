@@ -38,13 +38,14 @@
 // The reason for the high is for logic high voltage
 // to give the logic voltage so when the button is pushed
 // you can use this
-#define BUTTON_START_READ  19 //pin 29 physical
-#define BUTTON_START_HIGH  7 //pin 13  physical
+#define BUTTON_START_READ 19 //pin 29 physical
+#define BUTTON_START_HIGH 7 //pin 13  physical
 
 #define BUTTON_STOP_READ 10 //pin 18 physical
 #define BUTTON_STOP_HIGH 8 //pin 15 physical
 
-int shouldloop = 0; //off by default.
+// CRITICAL: make shouldloop volatile as it's shared between ISR and main loop
+volatile int shouldloop = 0; //off by default.
 
 //Define duty cycle and clock speed for freq of PWM and direction
 #define PWM_RANGE 1024
@@ -94,14 +95,24 @@ int fd;
 
 //Stops all chasis motors and has slight delay to prevent burnup
 void stop(){
+    // Dynamic Brake for immediate stop
+    pwmWrite(PWM1_PIN, PWM_RANGE);
+    pwmWrite(PWM2_PIN, PWM_RANGE);
+    pwmWrite(PWM3_PIN, PWM_RANGE);
+    pwmWrite(PWM4_PIN, PWM_RANGE);
+    delay(50); // Short brake duration
+
+    // Coast Stop
     pwmWrite(PWM1_PIN, 0);
     pwmWrite(PWM2_PIN, 0);
     pwmWrite(PWM3_PIN, 0);
     pwmWrite(PWM4_PIN, 0);
     currentDir = DIR_STOP;
-    delay(500);
+    delay(50); // Short post-stop delay
 }
-//sets the PWM and DO to a HIGH state in order to "lock" motors
+
+// Replaced with immediate brake in stop() for responsiveness
+/*
 void brake(){
     pwmWrite(PWM1_PIN, PWM_RANGE);
     pwmWrite(PWM2_PIN, PWM_RANGE);
@@ -110,6 +121,7 @@ void brake(){
     delay(100);
 
 }
+*/
 
 void readStop(void){
     shouldloop = 0; //turns loop off
@@ -147,8 +159,9 @@ void stop_cleaning() {
     softPwmWrite(BRUSHR, 0);
     digitalWrite(VACL, LOW);
     softPwmWrite(VACR, 0);
-    delay(2000);
-    close(fd);
+    delay(50);
+    // CRITICAL: Do not close I2C file descriptor here. It is needed later.
+    // close(fd);
 }
 
 
@@ -220,19 +233,23 @@ void backward(int PWMval){
 
 //Reads the encoder values of PCA I2C channels returns as int
 int read_PCA_channels(int ch) {
+    // Check if I2C file descriptor is valid
+    if (fd < 0) return -1;
+
     ioctl(fd, I2C_SLAVE, TCA_ADDR);
     uint8_t config = 1 << ch;
     write(fd, &config, 1);
     ioctl(fd, I2C_SLAVE, TOF_ADDR);
-    if (multi < 8) {
-        tofInit(4, TOF_ADDR, 1);
-    }
+    // This initialisation logic is redundant if done in setup, and dangerous here.
+    // if (multi < 8) {
+    //  tofInit(4, TOF_ADDR, 1);
+    // }
     int distance = tofReadDistance();
-//    printf("The tof distance is %d\n", distance);
+//    printf("The tof distance is %d\n", distance);
     return distance;
 }
 
-//Go specified distance in mm and given direction DIR_FOR/DIR_REV and start speed
+//Go specified distance in cm and given direction DIR_FOR/DIR_REV and start speed
 void distance_cm(int cm, int direction, int speed) {
     int startr = countrm;
     int startl = countlm;
@@ -244,11 +261,16 @@ void distance_cm(int cm, int direction, int speed) {
     int leftsense = read_PCA_channels(0);
     int rightsense = read_PCA_channels(1);
     while (abs(countrcm) < cm && abs(countlcm) < cm) {
+        // CRITICAL FIX: Check if we need to stop inside this blocking loop
+        if (shouldloop == 0) {
+            stop();
+            return;
+        }
+
         leftsense = read_PCA_channels(0);
         rightsense = read_PCA_channels(1);
         if((leftsense > edge_distance || rightsense > edge_distance) && turning) {
-            brake();
-            stop();
+            stop(); // Used to be brake/stop
             on_edge = true;
             return;
         }
@@ -270,8 +292,7 @@ void distance_cm(int cm, int direction, int speed) {
             printf("Invalid direction\n");
         }
     }
-    brake();
-    stop();
+    stop(); // Used to be brake/stop
 }
 
 //Right chasis encoder counter
@@ -281,7 +302,7 @@ void encoder_r_isr(void){
     uint8_t cur = (a << 1) | b;
     countrm += transTable[prevrm][cur];
     prevrm = cur;
-//    printf("The r value is %i \n", countrm);
+//    printf("The r value is %i \n", countrm);
 }
 
 //Left chasis encoder counter
@@ -291,7 +312,7 @@ void encoder_l_isr(void){
     uint8_t cur = (a << 1) | b;
     countlm += transTable[prevlm][cur];
     prevlm = cur;
-//    printf("The l value is %i \n", countlm);
+//    printf("The l value is %i \n", countlm);
 }
 
 //Squares the robot with an edge to prep for next pass
@@ -301,6 +322,12 @@ void square(int direction) {
     int redge = 0;
     int ledge = 0;
     while(redge != 1 || ledge != 1) {
+        // CRITICAL FIX: Check if we need to stop inside this blocking loop
+        if (shouldloop == 0) {
+            stop();
+            return;
+        }
+
         if(direction == DIR_FORWARD) {
             if (left < edge_distance) {
                 pwmWrite(PWM1_PIN, PWM_SLOW + 70);
@@ -309,11 +336,9 @@ void square(int direction) {
             }
             else {
                 ledge = 1;
+                // Use brake logic to stop individual wheel
                 pwmWrite(PWM1_PIN, PWM_RANGE);
                 pwmWrite(PWM2_PIN, PWM_RANGE);
-                delay(50);
-                pwmWrite(PWM1_PIN, 0);
-                pwmWrite(PWM2_PIN, 0);
             }
 
             if (right < edge_distance) {
@@ -323,16 +348,15 @@ void square(int direction) {
             }
             else {
                 redge = 1;
+                // Use brake logic to stop individual wheel
                 pwmWrite(PWM3_PIN, PWM_RANGE);
                 pwmWrite(PWM4_PIN, PWM_RANGE);
-                delay(50);
-                pwmWrite(PWM3_PIN, 0);
-                pwmWrite(PWM4_PIN, 0);
             }
         }
 
 
         if (direction == DIR_BACKWARD) {
+            // Backward squaring logic is complex and preserved, but needs the stop check
             if (left < edge_distance) {
                 pwmWrite(PWM1_PIN, 0);
                 pwmWrite(PWM2_PIN, PWM_SLOW + 70);
@@ -355,6 +379,7 @@ void square(int direction) {
                 pwmWrite(PWM4_PIN, PWM_RANGE);
             }
         }
+        delay(10); // Short delay to prevent busy looping
     }
     delay(200);
     stop();
@@ -368,20 +393,31 @@ void turn(int direction) {
     int startl = countlm;
     int turnr = 0;
     int turnl = 0;
-    while ((direction == DIR_RIGHT && abs(turnr)  < turncount) || (direction == DIR_LEFT && abs(turnl) < turncount)) {
+    while ((direction == DIR_RIGHT && abs(turnr) < turncount) || (direction == DIR_LEFT && abs(turnl) < turncount)) {
+        // CRITICAL FIX: Check if we need to stop inside this blocking loop
+        if (shouldloop == 0) {
+            stop();
+            return;
+        }
+
         if (direction == DIR_RIGHT) {
-            pwmWrite(PWM3_PIN, 0);
-            pwmWrite(PWM4_PIN, PWM_MEDIUM + 100);
+            // Pivot Right: Right motor reverse, Left motor forward (Corrected turning logic)
+            pwmWrite(PWM1_PIN, 0);
+            pwmWrite(PWM2_PIN, PWM_MEDIUM + 100);
+            pwmWrite(PWM3_PIN, PWM_MEDIUM + 100);
+            pwmWrite(PWM4_PIN, 0);
             turnr = countrm - startr;
         }
         if (direction == DIR_LEFT) {
-            pwmWrite (PWM1_PIN, 0);
-            pwmWrite (PWM2_PIN, PWM_MEDIUM + 100);
+            // Pivot Left: Right motor forward, Left motor reverse (Corrected turning logic)
+            pwmWrite (PWM1_PIN, PWM_MEDIUM + 100);
+            pwmWrite (PWM2_PIN, 0);
+            pwmWrite (PWM3_PIN, 0);
+            pwmWrite (PWM4_PIN, PWM_MEDIUM + 100);
             turnl = countlm - startl;
         }
     }
-    brake();
-    stop();
+    stop(); // Used to be brake/stop
     reset_count();
 }
 
@@ -390,6 +426,12 @@ void turn(int direction) {
 //if one side goes over edge adjust motors to correct
 void look_for_edge(void){
     while(1) {
+        // CRITICAL FIX: Check if we need to stop inside this infinite loop
+        if (shouldloop == 0) {
+            stop();
+            return;
+        }
+
         int tofl = 0;
         int tofr = 0;
         tofl = read_PCA_channels(0);
@@ -416,13 +458,13 @@ void look_for_edge(void){
         }
         if (tofr > edge_distance) {
             if (tofl > edge_distance) {
-                brake();
-                stop();
+                stop(); // Used to be brake/stop
                 break;
             }
         }
         forward(PWM_SLOW);
     }
+    // All following calls are now safe because distance_cm/square check shouldloop internally
     distance_cm(10, DIR_BACKWARD, PWM_SLOW);
     square(DIR_FORWARD);
     if(!startup) {
@@ -435,13 +477,24 @@ void look_for_edge(void){
 
 //Turn in direction and move over to next row
 void next_row(int direction) {
+    // Check before starting a long sequence
+    if (shouldloop == 0) { stop(); return; }
+
     turn(direction);
     turning = true;
+
+    // These functions now check shouldloop internally
     distance_cm(30, DIR_FORWARD, PWM_SLOW);
+    if (shouldloop == 0) return;
+
     turn(direction);
-    square(DIR_BACKWARD);
     turning = false;
+    square(DIR_BACKWARD);
+    if (shouldloop == 0) return;
+
     distance_cm(10, DIR_FORWARD, PWM_SLOW);
+    if (shouldloop == 0) return;
+
     square(DIR_BACKWARD);
 }
 
@@ -455,25 +508,22 @@ void cleaning(){
 
 //robot finds an edge and squares with edge to determine starting position.
 void start_position() {
+    // Check before starting a long sequence
+    if (shouldloop == 0) { stop(); return; }
+
     startup = true;
     look_for_edge();
+    if (shouldloop == 0) return;
+
     turn(DIR_RIGHT);
+    if (shouldloop == 0) return;
+
     look_for_edge();
+    if (shouldloop == 0) return;
+
     turn(DIR_RIGHT);
     square(DIR_BACKWARD);
     startup = false;
-}
-
-void stop_all() {
-    pwmWrite(PWM1_PIN, 0);
-    pwmWrite(PWM2_PIN, 0);
-    pwmWrite(PWM3_PIN, 0);
-    pwmWrite(PWM4_PIN, 0);
-    digitalWrite(BRUSHL, LOW);
-    softPwmWrite(BRUSHR, 0);
-    digitalWrite(VACL, LOW);
-    softPwmWrite(VACR, 0);
-    delay(10);
 }
 //Sets the pins used for PWM to PWM_OUTPUT mode and establishes the
 //max duty cydle & clock speed for PWM.
@@ -522,9 +572,20 @@ void setupRobot(){
 
     //initialize multiplexer for tof sensors
     fd = open(I2C_BUS, O_RDWR);
-    for (int ch=0; ch <8; ch++) {
-        read_PCA_channels(ch);
-        multi++;
+    if (fd < 0) {
+        perror("Failed to open I2C bus");
+        // Don't exit, but prevent I2C ops from running
+    } else {
+        // Initialize all sensors
+        for (int ch=0; ch <8; ch++) {
+            // Select MUX channel
+            ioctl(fd, I2C_SLAVE, TCA_ADDR);
+            uint8_t config = 1 << ch;
+            write(fd, &config, 1);
+            // Select ToF and init
+            ioctl(fd, I2C_SLAVE, TOF_ADDR);
+            tofInit(4, TOF_ADDR, 1);
+        }
     }
 }
 
