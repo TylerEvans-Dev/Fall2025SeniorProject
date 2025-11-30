@@ -518,7 +518,11 @@ void setupRobot(){
 //main function
 int main(void){
     //initializing pins and setup for robot
-
+    wiringPiSetup();
+    printf("WiringPi setup\n");
+    setupRobot();
+    printf("Robot setup\n");
+    setupButton();
     //start to do "main" loop and go back/fourth and clean
     while(shouldloop == 1){
     cleaning();
@@ -549,7 +553,4 @@ int main(void){
         printf("idle\n");
         usleep(100);
     }
-/*    for(int i = 0; i<4; i++ ) {
-        read_PCA_channels(i);
-    } */
 }
