@@ -524,6 +524,7 @@ int main(void){
     printf("Robot setup\n");
     setupButton();
     //start to do "main" loop and go back/fourth and clean
+    while(true){
     while(shouldloop == 1){
     cleaning();
     start_position();
@@ -546,7 +547,6 @@ int main(void){
         next_row(DIR_LEFT);
     }
     look_for_edge();
-    loopend:
     stop_cleaning();
     }
     while(shouldloop == 0){
