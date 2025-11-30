@@ -114,16 +114,6 @@ void brake(){
 void readStop(void){
     shouldloop = 0; //turns loop off
     printf("reading stop button shouldloop == %i\n", shouldloop);
-    stop();
-    digitalWrite(BRUSHL, LOW); //soft pwm direction
-    softPwmWrite(BRUSHR, 0); //soft pwm duty cycle %
-    digitalWrite(VACL, LOW); //soft pwm direction
-    softPwmWrite(VACR, 0); //soft pwm duty cycle %
-    pwmWrite(PWM1_PIN, 0);
-    pwmWrite(PWM2_PIN, 0);
-    pwmWrite(PWM3_PIN, 0);
-    pwmWrite(PWM4_PIN, 0);
-    delay(100);
 }
 
 void readStart(void){
@@ -540,33 +530,37 @@ int main(void){
     setupButton();
     //start to do "main" loop and go back/fourth and clean
     while(true){
-    while(shouldloop == 1){
-    cleaning();
-    start_position();
-    while(!on_edge) {
-        look_for_edge();
-        next_row(DIR_RIGHT);
-        look_for_edge();
-        next_row(DIR_LEFT);
-    }
-    startup = true;
-    look_for_edge();
-    startup = false;
-    turn(DIR_RIGHT);
-    on_edge = false;
-    delay(100);
-    while(!on_edge) {
-        look_for_edge();
-        next_row(DIR_RIGHT);
-        look_for_edge();
-        next_row(DIR_LEFT);
-    }
-    look_for_edge();
-    stop_cleaning();
-    }
-    while(shouldloop == 0){
-        printf("idle\n");
-        usleep(100);
-    }
+        while(shouldloop == 1){
+            cleaning();
+            start_position();
+            while(!on_edge) {
+                look_for_edge();
+                next_row(DIR_RIGHT);
+                look_for_edge();
+                next_row(DIR_LEFT);
+            }
+            startup = true;
+            look_for_edge();
+            startup = false;
+            turn(DIR_RIGHT);
+            on_edge = false;
+            delay(100);
+            while(!on_edge) {
+                look_for_edge();
+                next_row(DIR_RIGHT);
+                look_for_edge();
+                next_row(DIR_LEFT);
+            }
+            look_for_edge();
+            stop_cleaning();
+            shouldloop = 0;
+        }
+        while(shouldloop == 0){
+            //stop();
+            stop_cleaning();
+            brake();
+            printf("idle\n");
+            usleep(100);
+        }
     }
 }
