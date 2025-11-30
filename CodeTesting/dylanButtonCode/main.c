@@ -119,10 +119,10 @@ void readStop(void){
     softPwmWrite(BRUSHR, 0); //soft pwm duty cycle %
     digitalWrite(VACL, LOW); //soft pwm direction
     softPwmWrite(VACR, 0); //soft pwm duty cycle %
-    pwmWrite(PWM1_PIN, PWM_RANGE);
-    pwmWrite(PWM2_PIN, PWM_RANGE);
-    pwmWrite(PWM3_PIN, PWM_RANGE);
-    pwmWrite(PWM4_PIN, PWM_RANGE);
+    pwmWrite(PWM1_PIN, 0);
+    pwmWrite(PWM2_PIN, 0);
+    pwmWrite(PWM3_PIN, 0);
+    pwmWrite(PWM4_PIN, 0);
     delay(100);
 }
 
