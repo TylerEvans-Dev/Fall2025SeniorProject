@@ -174,7 +174,7 @@ void stop_cleaning() {
     // CRITICAL: Do not close I2C file descriptor here. It is needed later.
     // close(fd);
 }
-oid stop_again(){
+void stop_again(){
     // Soft Coast Stop - This eliminates the hard dynamic brake that causes clicking.
     // Setting all PWMs to 0 immediately stops power, allowing the motors to coast
     // to a stop without the sudden, loud short-circuit lock.
