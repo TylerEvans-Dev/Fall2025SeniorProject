@@ -556,7 +556,7 @@ int main(){
     setupButton();
     printf("button setup\n");
     while (1) {
-	printf("in main loop\n");
+	//printf("in main loop\n");
         //readStart();
         //readStop();
         usleep(1000);
