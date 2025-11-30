@@ -463,6 +463,18 @@ void start_position() {
     square(DIR_BACKWARD);
     startup = false;
 }
+
+void stop_all() {
+    pwmWrite(PWM1_PIN, 0);
+    pwmWrite(PWM2_PIN, 0);
+    pwmWrite(PWM3_PIN, 0);
+    pwmWrite(PWM4_PIN, 0);
+    digitalWrite(BRUSHL, LOW);
+    softPwmWrite(BRUSHR, 0);
+    digitalWrite(VACL, LOW);
+    softPwmWrite(VACR, 0);
+    delay(10);
+}
 //Sets the pins used for PWM to PWM_OUTPUT mode and establishes the
 //max duty cydle & clock speed for PWM.
 void setupRobot(){
@@ -557,8 +569,8 @@ int main(void){
         }
         while(shouldloop == 0){
             //stop();
-            stop_cleaning();
-            brake();
+            stop_all();
+            //brake();
             printf("idle\n");
             usleep(100);
         }
