@@ -534,7 +534,7 @@ void setupRobot(){
 
 //main function
 int main(void){
-    //initializing pins and setup for robot
+    // initializing pins and setup for robot
     wiringPiSetup();
     printf("WiringPi setup\n");
     setupRobot();
@@ -543,36 +543,49 @@ int main(void){
     //start to do "main" loop and go back/fourth and clean
     while(true){
         while(shouldloop == 1){
+            // If any of the functions called within here check `shouldloop` and return,
+            // this outer loop will immediately re-evaluate its condition and exit.
             cleaning();
             start_position();
-            while(!on_edge) {
+            while(!on_edge && shouldloop == 1) { // Added shouldloop check to inner while
                 look_for_edge();
+                if (shouldloop == 0) break;
                 next_row(DIR_RIGHT);
+                if (shouldloop == 0) break;
                 look_for_edge();
+                if (shouldloop == 0) break;
                 next_row(DIR_LEFT);
+                if (shouldloop == 0) break;
             }
+            if (shouldloop == 0) continue; // Skip to idle loop check if interrupted
+
             startup = true;
             look_for_edge();
             startup = false;
             turn(DIR_RIGHT);
             on_edge = false;
             delay(100);
-            while(!on_edge) {
+            while(!on_edge && shouldloop == 1) { // Added shouldloop check to inner while
                 look_for_edge();
+                if (shouldloop == 0) break;
                 next_row(DIR_RIGHT);
+                if (shouldloop == 0) break;
                 look_for_edge();
+                if (shouldloop == 0) break;
                 next_row(DIR_LEFT);
+                if (shouldloop == 0) break;
             }
+            if (shouldloop == 0) continue; // Skip to idle loop check if interrupted
+
             look_for_edge();
             stop_cleaning();
             shouldloop = 0;
         }
         while(shouldloop == 0){
-            //stop();
-            stop_all();
-            //brake();
+            stop(); // Ensure chassis motors are braked/stopped
+            stop_cleaning(); // Ensure brush/vac are stopped
             printf("idle\n");
-            usleep(100);
+            usleep(100000); // 100ms delay, more robust than 100us
         }
     }
 }
